@@ -1,7 +1,10 @@
+; Determine if a number is prime or composite, but skip to the end
+; immediately if it will be composite
+
 %format word 2
 %section const
 ; Good test cases: 437 = 19*23, 439 = 1*439
-number: .word 439
+number: .word 437
 
 %section state
 test: .word 2

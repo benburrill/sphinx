@@ -1,5 +1,7 @@
-%format word 2
+; Find all primes less than max_number, skipping the effort of checking
+; whether numbers are prime if they will just be composite (see prime.s)
 
+%format word 2
 %section const
 max_number: .word 100
 

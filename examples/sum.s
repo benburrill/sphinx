@@ -1,4 +1,5 @@
-; Find the sum of an array, but output 0 immediately if it will be 0
+; Find the sum of an array, but output 0 immediately if sum will be 0
+
 %format word 2
 %section const
 arr: .word 2, 3, -8, 3

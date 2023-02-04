@@ -1,3 +1,5 @@
+; Just counts upwards to 10.  No magic.
+
 %format word 2
 %section state
 counter: .word 0
