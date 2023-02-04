@@ -13,7 +13,9 @@ Instructions
 ------------
 
 Arguments to most instructions in Sphinx can be any of the following
-forms: ``ARG ::= IMMED | [IMMED] | {IMMED}``
+forms::
+
+    ARG ::= IMMED | [IMMED] | {IMMED}
 
 - IMMED - immediate values.  These can be any assembly-time expression
   using labels and numeric literals.  For example: ``8``, ``my_label``,
@@ -76,6 +78,6 @@ Allowed in the state and const sections
 Preprocessor commands
 ---------------------
 
-- ``%section code | state | const`` - set current section
+- ``%section code | state | const`` - change the section
 - ``%format word NUMBER | inf`` - set the word size in bytes, or ``inf``
   for infinite words which can represent any integer.
