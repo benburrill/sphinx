@@ -8,13 +8,12 @@ use Python 3.11.
 
 To run the prime loop example: ``python3.11 emulator.py examples/prime_loop.s``
 
-.. note::
-
-    Due to the unfortunate limitations of traditional processors, the
-    emulator may require an exponential amount of memory and time to
-    perform jump instructions in some cases, based on the amount of
-    state.  On a true Sphinx architecture, the jump instruction is
-    specified to take one clock cycle.
+**NOTE:**
+Due to the unfortunate limitations of traditional processors, the
+emulator may require an exponential amount of memory and time to perform
+jump instructions in some cases, based on the amount of state.  On a
+true Sphinx architecture, the jump instruction is specified to take one
+clock cycle.
 
 Instructions
 ------------
