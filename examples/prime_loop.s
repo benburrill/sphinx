@@ -15,7 +15,8 @@ yield 2  ; Because my code skips it
 loop:
     add [number], [number], 1
 
-    ; This works as you'd expect, but it's a bit subtle!
+    ; We're guaranteed a path to an infinite loop here, so this is only
+    ; testing if [number] >= {max_number}, nothing else.
     j done
     hgt [number], {max_number}
 
