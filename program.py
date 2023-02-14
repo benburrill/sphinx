@@ -176,7 +176,7 @@ class Program:
             case ('im', immediate):
                 if signed_imm:
                     return immediate
-                return immediate & mf.word_mask
+                return immediate & self.mf.word_mask
             case ('cv', addr):
                 word = self.mf.read_word(self.const, addr)
             case ('sv', addr):
