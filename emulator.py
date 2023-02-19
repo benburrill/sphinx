@@ -91,7 +91,7 @@ class RealContext(ExecutionContext):
     def on_flag(self, prog, flag):
         print(f'Reached {flag} flag')
         match flag:
-            case 'done' | 'error':
+            case 'done' | 'error' | 'win' | 'lose':
                 print(f'    Time taken: {self.total_time} cycles')
             case 'debug':
                 print(f'    PC: {prog.pc}')
