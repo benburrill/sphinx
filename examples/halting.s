@@ -76,6 +76,13 @@ loop:
     div [jump], [diff], [jump]
     lbco [jump], branch_sign, [jump]
     j [jump]
+    ; This halt is actually not necessary to ensure that the jump isn't
+    ; skipped because the program is guaranteed to eventually halt due
+    ; to the loop being bounded by the other jump (even if the program
+    ; were to make the wrong decision here), so the correct jump will be
+    ; taken here, with or without forcing it with an unconditional halt
+    ; immediately after.  Easier to reason about with it though.
+    ; Also means the emulator needs to do less work.
     halt
     bigger:
 
@@ -88,3 +95,5 @@ halt
 
 done:
 yield [max_val]
+; Thanks to the power of unconditional conditional jumps, we don't need
+; terminal non-termination to get the output to show!
