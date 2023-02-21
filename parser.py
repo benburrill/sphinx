@@ -1,6 +1,5 @@
 import operator
 import itertools as it
-from dataclasses import dataclass
 from collections import ChainMap, deque
 import expressions as expr
 import directives as direc
@@ -10,13 +9,6 @@ import re
 import sys
 
 from errors import *
-
-
-@dataclass
-class Origin:
-    file: str
-    line: int
-    column: int
 
 
 class Scanner:
@@ -396,10 +388,11 @@ def read_data_direc(scan, namespace, mf):
             byte_exprs = list(read_args(scan, b' :multi_expr:', namespace, mf))
             return direc.ByteDirective(byte_exprs)
         case '.fill':
-            return direc.FillDirective(*read_args(scan, b' :expr:,:expr:', namespace, mf))
+            fill_expr, length_expr = read_args(scan, b' :expr:,:expr:', namespace, mf)
+            return direc.FillDirective(fill_expr, length_expr, scan.get_origin())
         case '.zero':
             length_expr, = read_args(scan, b' :expr:', namespace, mf)
-            return direc.FillDirective(expr.Value(0), length_expr)
+            return direc.FillDirective(expr.Value(0), length_expr, scan.get_origin())
         case _:
             raise AssemblerSyntaxError(
                 f'{direc_name} is not a data directive',

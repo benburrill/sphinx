@@ -1,3 +1,11 @@
+from dataclasses import dataclass
+
+@dataclass
+class Origin:
+    file: str
+    line: int
+    column: int
+
 class AssemblerError(Exception):
     def __init__(self, message, origin):
         super().__init__(message)

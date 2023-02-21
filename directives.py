@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from memory import MemoryFormat
 import typing as ty
 
+from errors import *
+
 
 # Seems a bit weird to subclass "Expression" because directives are not
 # really expressions.  They just play the same sort of game with get().
@@ -17,12 +19,20 @@ class Directive(Expression):
 class FillDirective(Directive):
     fill_expr: Expression
     length_expr: Expression
+    origin: Origin
 
     def get(self):
-        return bytes([self.fill_expr.get()]) * self.length_expr.get()
+        return bytes([self.fill_expr.get()]) * len(self)
 
     def __len__(self):
-        return self.length_expr.get()
+        length = self.length_expr.get()
+        if length < 0:
+            raise ExpressionError(
+                'Fill length must not be negative',
+                self.origin
+            )
+
+        return length
 
 
 @dataclass
