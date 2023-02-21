@@ -15,6 +15,7 @@
 ; address to jump to based on that.
 
 ; Currently I haven't added bitwise operators, but we don't need 'em
+; NOTE: division by 0 causes div to leave the output unchanged.
 ; To test if x is non-zero (1 if non-zero, 0 if zero):
 ;   mov [test], [x]
 ;   div [test], [test], [test]
