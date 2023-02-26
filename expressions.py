@@ -54,9 +54,9 @@ class MaybeCyclical(Expression, Pretty):
         if self.trying_to_find_out:
             self.trying_to_find_out = False
             raise CyclicDependencyError(
-                f'The expression {self.name} is cyclical and cannot'
-                ' be resolved',
-                self.origin
+                f'The expression {self} is cyclical and cannot be'
+                ' resolved',
+                getattr(self, 'origin', None)
             )
 
         try:
