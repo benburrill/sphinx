@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from collections import deque
 from collections.abc import Sequence
-from memory import MemoryFormat
+from memory import MemoryFormat, signed_bytes_needed
 import enum
 
 
@@ -204,16 +204,19 @@ class Program:
             self.pc, = options
 
     def save(self):
-        # 8 bytes is certainly more than necessary, would be better to
-        # use something smaller, but it's at least better than a tuple.
-        # It's signed because I plan to make use of negative addresses
+        # PC is signed because I plan to make use of negative addresses
         # in the future.
-        return self.pc.to_bytes(8, 'little', signed=True) + self.state
+        pc_bytes = self.pc.to_bytes(
+            signed_bytes_needed(self.pc),
+            'little', signed=True
+        )
+
+        return pc_bytes + self.state
 
     def restore(self, sb):
-        state = memoryview(bytearray(sb))
-        self.pc = int.from_bytes(state[:8], 'little', signed=True)
-        self.state[:] = state[8:]
+        pc_size = len(sb) - len(self.state)
+        self.pc = int.from_bytes(sb[:pc_size], 'little', signed=True)
+        self.state[:] = sb[pc_size:]
 
     def fork(self):
         # Return new instance with copied state

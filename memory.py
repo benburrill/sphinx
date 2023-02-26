@@ -2,14 +2,16 @@ import math
 import sys
 
 
-# I think MemoryFormat could also maintain a separate internal pc_size
-# which basically is as small as we can pack the program counter, ie
-# ceil(len(instr).bit_length()/8), which might be more or less than one
-# word (can be more for immediate jumps).  Probably usually less though.
+def signed_bytes_needed(num):
+    # Number of bytes needed to store the signed value num
+    if num < 0:
+        num += 1
+
+    return -((num.bit_length() + 1) // -8)
+
+
 class MemoryFormat:
     def __init__(self, word_size):
-        # TODO: Should I have byteorder as well or just use little
-        # endian everywhere?
         self.set_word_size(word_size)
 
     def set_word_size(self, word_size):
