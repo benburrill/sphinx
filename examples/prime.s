@@ -17,8 +17,8 @@ test_divis:
     mod [mod_result], {number}, [test]
     heq [mod_result], 0
     add [test], [test], 1
-    j test_divis
-    hlt [test], {number}
+j test_divis
+hlt [test], {number}
 
 flag prime
 j done

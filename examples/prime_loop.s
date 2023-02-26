@@ -27,10 +27,10 @@ loop:
         mod [mod_result], [number], [test]
         heq [mod_result], 0
         add [test], [test], 1
-        j test_divis
-        hlt [test], [number]
-    j loop
-    halt
+    j test_divis
+    hlt [test], [number]
+j loop
+halt
 
 done: flag done
 tnt: j tnt
