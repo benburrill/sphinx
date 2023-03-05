@@ -5,6 +5,7 @@ def gen_data(input_str, data_size):
         '\n': '\\n'
     }))
 
+    yield '%format output byte'
     yield '%section const'
     yield f'input: .asciiz "{escaped}"'
 

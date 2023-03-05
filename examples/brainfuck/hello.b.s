@@ -1,3 +1,4 @@
+%format output byte
 %section const
 input: .asciiz ""
 %section state

@@ -89,7 +89,7 @@ class Program:
                 if self.signed(vleft) != self.signed(vright):
                     return ()
             case ('yield', varg):
-                ctx.output(self.signed(varg))
+                ctx.output(self.bytes(varg))
             case ('add', out, vleft, vright):
                 self.mf.write_int(self.state, out, self.signed(vleft) + self.signed(vright))
             case ('sub', out, vleft, vright):
@@ -103,7 +103,7 @@ class Program:
                 try: self.mf.write_int(self.state, out, self.signed(vleft) % self.signed(vright))
                 except ZeroDivisionError: pass
             case ('mov', out, varg):
-                self.mf.write_int(self.state, out, self.signed(varg))
+                self.mf.write_word(self.state, out, self.bytes(varg))
             case ('lws', out, vsa):
                 self.mf.write_word(
                     self.state, out,
@@ -171,12 +171,18 @@ class Program:
 
         return (self.pc + 1,)
 
-    def read_spec(self, spec, *, signed_mem, signed_imm):
+    def read_spec(self, spec, signed=True, *, as_bytes):
+        # Note: Unless as_bytes is set to True, immediate values will be
+        # returned as-is, which means they may be larger than can fit in
+        # a word, and signed has no effect on them.
+        # If word-wrapped immediate values are needed, the simplest way
+        # to get them is to set as_bytes to True.  The result can then
+        # be treated as signed or unsigned as desired.
         match spec:
             case ('im', immediate):
-                if signed_imm:
-                    return immediate
-                return immediate & self.mf.word_mask
+                if as_bytes:
+                    return self.mf.int_bytes(immediate)
+                return immediate
             case ('cv', addr):
                 word = self.mf.read_word(self.const, addr)
             case ('sv', addr):
@@ -184,16 +190,19 @@ class Program:
             case _:
                 raise ValueError(f'Invalid value specifier {spec}')
 
-        return int.from_bytes(word, 'little', signed=signed_mem)
+        if as_bytes:
+            return word
+
+        return int.from_bytes(word, 'little', signed=signed)
 
     def signed(self, spec):
-        return self.read_spec(spec, signed_mem=True, signed_imm=True)
+        return self.read_spec(spec, signed=True, as_bytes=False)
 
     def unsigned(self, spec):
-        return self.read_spec(spec, signed_mem=False, signed_imm=True)
+        return self.read_spec(spec, signed=False, as_bytes=False)
 
-    def true_unsigned(self, spec):
-        return self.read_spec(spec, signed_mem=False, signed_imm=False)
+    def bytes(self, spec):
+        return self.read_spec(spec, as_bytes=True)
 
     def run_until_branch(self, ctx):
         while True:

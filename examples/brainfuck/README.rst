@@ -7,8 +7,12 @@ There are two modes:
 
 The ``runner`` mode is a direct translation, where termination of the
 brainfuck program translates into a done flag followed by terminal
-non-termination in Sphinx.  The output is integers, as that's currently
-the only output mode Sphinx has.
+non-termination in Sphinx.
+
+Based on examples/halting.s, we should be able to transform any halting
+brainfuck program into a halting Sphinx program without it halting too
+early, but it's easier just to use terminal non-termination to deal with
+this problem.
 
 The ``forecaster`` mode produces a sphinx program which "immediately"
 outputs a flag to the user indicating whether the brainfuck program

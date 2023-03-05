@@ -56,11 +56,11 @@ class MemoryFormat:
 
         buf[addr] = byte & 0xFF
 
+    def int_bytes(self, val):
+        return (val & self.word_mask).to_bytes(self.word_size, 'little')
+
     def write_int(self, buf, addr, val):
-        return self.write_word(
-            buf, addr,
-            (val & self.word_mask).to_bytes(self.word_size, 'little')
-        )
+        return self.write_word(buf, addr, self.int_bytes(val))
 
     def array_from_words(self, words):
         array = bytearray(self.word_size * len(words))

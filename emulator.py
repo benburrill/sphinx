@@ -1,5 +1,5 @@
-from abc import ABC, abstractmethod
 from parser import Parser
+from context import VirtualContext, IntOutputContext
 
 from errors import *
 
@@ -10,7 +10,7 @@ class Emulator:
         self.cycle = cycle
 
         self.vctx = vctx if vctx is not None else VirtualContext()
-        self.rctx = rctx if rctx is not None else RealContext()
+        self.rctx = rctx if rctx is not None else IntOutputContext(signed=True)
 
     @classmethod
     def run_from_file(cls, fname, reraise=False):
@@ -19,13 +19,14 @@ class Emulator:
         try:
             ps.parse_file(fname)
             prog = ps.get_program()
+            rctx = ps.get_output_context()
         except AssemblerError as err:
             ps.handle_error(err)
             if reraise:
                 raise
             return
 
-        cls(prog).run()
+        cls(prog, rctx=rctx).run()
 
     def step(self):
         match self.prog.exec(self.rctx):
@@ -53,49 +54,6 @@ class Emulator:
         # request that execution be paused, returning early from run.
         while self.step():
             pass
-
-
-class ExecutionContext(ABC):
-    def __init__(self):
-        self.total_time = 0
-
-    # Called right before any instruction is executed.
-    def before_exec(self, prog):
-        self.total_time += 1
-
-    @abstractmethod
-    def output(self, val):
-        pass
-
-    @abstractmethod
-    def on_flag(self, prog, flag):
-        pass
-
-    # @abstractmethod
-    # def run_syscall(self, syscall):
-    #     pass
-
-
-class VirtualContext(ExecutionContext):
-    def output(self, val):
-        pass
-
-    def on_flag(self, prog, flag):
-        pass
-
-
-class RealContext(ExecutionContext):
-    def output(self, val):
-        print(val)
-
-    def on_flag(self, prog, flag):
-        print(f'Reached {flag} flag')
-        match flag:
-            case 'done' | 'error' | 'win' | 'lose':
-                print(f'    Time taken: {self.total_time} cycles')
-            case 'debug':
-                print(f'    PC: {prog.pc}')
-                print(f'    State: {prog.state.hex(" ", -prog.mf.word_size)}')
 
 
 if __name__ == '__main__':

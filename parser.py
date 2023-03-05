@@ -1,8 +1,8 @@
 import operator
-import itertools as it
 from collections import ChainMap, deque
 import expressions as expr
 import directives as direc
+from context import output_map
 from memory import MemoryFormat
 from program import Program, CodeTable
 import re
@@ -406,22 +406,30 @@ meta_tok = re.compile(tok_re({
 }).encode())
 
 class Parser:
-    def __init__(self, mf=None):
-        self.globals = {}
-        self.sections = {'code': [], 'const': [], 'state': []}
-        self.mf = MemoryFormat(2) if mf is None else mf
-        self.enforced_word_size = None
+    def __init__(self):
         self.sources = {}
+        self.globals = {}
+        self.format = {}
+        self.sections = {'code': [], 'const': [], 'state': []}
+
+        # The actual initial word size doesn't matter here, we just need
+        # a shared MemoryFormat to pass around to expressions even it
+        # doesn't have a concrete value yet.
+        self.mf = MemoryFormat(2)
 
     def get_program(self):
+        self.mf.set_word_size(self.format.get('word', 2))
         return Program(
             mf=self.mf.copy(), pc=0,
-            code=CodeTable(tuple([direc.get() for direc in self.sections['code']])),
-            const=b''.join([direc.get() for direc in self.sections['const']]),
+            code=CodeTable(tuple([d.get() for d in self.sections['code']])),
+            const=b''.join([d.get() for d in self.sections['const']]),
             state=memoryview(bytearray().join(
-                [direc.get() for direc in self.sections['state']]
+                [d.get() for d in self.sections['state']]
             ))
         )
+
+    def get_output_context(self):
+        return output_map[self.format.get('output', 'signed')]()
 
     def read_section(self, scan):
         section = scan.read(ident_pat)
@@ -456,19 +464,23 @@ class Parser:
 
                     size = size.get()
 
-                if self.enforced_word_size is None:
-                    self.enforced_word_size = size
-                    self.mf.set_word_size(size)
+                return ('word', size)
 
-                if self.enforced_word_size != size:
+            case b'output':
+                expect_space(scan)
+                output = scan.read(ident_pat).decode()
+                if output not in output_map:
                     raise AssemblerSyntaxError(
-                        f'The word size {size} is inconsistent with previously specified size {self.enforced_word_size}',
+                        f'Invalid output format: {output}, must be in '
+                        f'{list(output_map)}',
                         scan.get_origin()
                     )
 
+                return ('output', output)
 
             case None:
                 raise AssemblerSyntaxError.unhelpful(scan.get_origin())
+
             case bad_spec:
                 raise AssemblerSyntaxError(
                     f'Invalid format specifier {bad_spec}',
@@ -479,7 +491,7 @@ class Parser:
     def prepare_section(self, section):
         # Add halt to end of previous code section if it exists
         if section == 'code' and self.sections['code']:
-            self.sections.append(direc.InstructionDirective('halt', []))
+            self.sections['code'].append(direc.InstructionDirective('halt', []))
 
 
     def handle_error(self, err):
@@ -544,7 +556,13 @@ class Parser:
                                 self.prepare_section(section)
                             case b'format':
                                 expect_space(scan)
-                                self.read_format_spec(scan)
+                                item, setting = self.read_format_spec(scan)
+                                if self.format.setdefault(item, setting) != setting:
+                                    raise AssemblerError(
+                                        f'The {item} format was previously set to {self.format[item]}, '
+                                        f'which conflicts with the value {setting}',
+                                        scan.get_origin()
+                                    )
                             case None:
                                 raise AssemblerSyntaxError.unhelpful(scan.get_origin())
                             case bad_command:
@@ -552,6 +570,9 @@ class Parser:
                                     f'No such preprocessor command {bad_command.decode()!r}',
                                     scan.get_origin()
                                 )
+
+                        if not is_end(scan):
+                            raise AssemblerSyntaxError.unhelpful(scan.get_origin())
                 break
 
 
@@ -560,8 +581,8 @@ class Parser:
 
 
             if section == 'code':
-                direc = read_instruction(scan, namespace, self.mf)
+                directive = read_instruction(scan, namespace, self.mf)
             else:
-                direc = read_data_direc(scan, namespace, self.mf)
+                directive = read_data_direc(scan, namespace, self.mf)
 
-            self.sections[section].append(direc)
+            self.sections[section].append(directive)
