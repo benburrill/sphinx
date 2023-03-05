@@ -1,5 +1,6 @@
 ; Demonstrates loops that take a long time to repeat a state
 
+%format output unsigned
 %format word 3
 %section state
 counter: .word 0
