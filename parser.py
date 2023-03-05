@@ -468,7 +468,12 @@ class Parser:
 
             case b'output':
                 expect_space(scan)
-                output = scan.read(ident_pat).decode()
+                output = scan.read(ident_pat)
+                if output is None:
+                    raise AssemblerSyntaxError.unhelpful(scan.get_origin())
+
+                output = output.decode()
+
                 if output not in output_map:
                     raise AssemblerSyntaxError(
                         f'Invalid output format: {output}, must be in '
@@ -483,7 +488,7 @@ class Parser:
 
             case bad_spec:
                 raise AssemblerSyntaxError(
-                    f'Invalid format specifier {bad_spec}',
+                    f'Invalid format specifier {bad_spec.decode()}',
                     scan.get_origin()
                 )
 
