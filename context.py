@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import contextlib
 import sys
 
 class ExecutionContext(ABC):
@@ -31,14 +32,19 @@ class VirtualContext(ExecutionContext):
 
 
 class RealContext(ExecutionContext):
+    def __init__(self):
+        super().__init__()
+        self.on_done = lambda: None
+
     def on_flag(self, prog, flag):
-        print(f'Reached {flag} flag')
-        match flag:
-            case 'done' | 'error' | 'win' | 'lose':
-                print(f'    CPU time: {self.total_time} clock cycles')
-            case 'debug':
-                print(f'    PC: {prog.pc}')
-                print(f'    State: {prog.state.hex(" ", -prog.mf.word_size)}')
+        with contextlib.redirect_stdout(sys.stderr):
+            print(f'Reached {flag} flag')
+            match flag:
+                case 'done' | 'error' | 'win' | 'lose':
+                    self.on_done()
+                case 'debug':
+                    print(f'    PC: {prog.pc}')
+                    print(f'    State: {prog.state.hex(" ", -prog.mf.word_size)}')
 
 
 class IntOutputContext(RealContext):
@@ -56,8 +62,9 @@ class ByteOutputContext(RealContext):
         self.last_byte = b'\n'
 
     def on_flag(self, prog, flag):
+        sys.stdout.flush()
         if self.last_byte != b'\n':
-            print()
+            print(file=sys.stderr)
             self.last_byte = b'\n'
 
         super().on_flag(prog, flag)

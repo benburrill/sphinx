@@ -11,6 +11,12 @@ class Emulator:
 
         self.vctx = vctx if vctx is not None else VirtualContext()
         self.rctx = rctx if rctx is not None else IntOutputContext(signed=True)
+        self.rctx.on_done = self.show_stats
+
+    def show_stats(self):
+        print(f'    CPU time: {self.rctx.total_time} clock cycles')
+        emulation_time = self.vctx.total_time + self.rctx.total_time
+        print(f'    Emulator efficiency: {self.rctx.total_time / emulation_time:.2%}')
 
     @classmethod
     def run_from_file(cls, fname, reraise=False):
