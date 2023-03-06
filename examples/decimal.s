@@ -1,14 +1,26 @@
 ; This prints a decimal expansion of a fraction, with repeating portion
 ; in parentheses, without any redundant digits.
-; It demonstrates the use of the byte output format.
 
-; TODO: explain, simplify, and test this better
+; Repeating fractions are detected in a bit of an interesting way.  You
+; can't avoid infinite loops in Sphinx the way you can halting, but what
+; this program does is optimistically guess that a repetition will begin
+; at each digit.  If the guess is correct, the loop will run until that
+; state repeats and then breaks out to terminal non-termination.  If the
+; guess would have been wrong, a slow cycle detector (tortoise and hare)
+; is used to eventually halt the loop, but only AFTER we would have
+; broken out if the guess was correct.  So we can use a jump instruction
+; to test for that halt, and if would occur, we can guess that the next
+; digit will be where the loop starts instead.
+; In other words: it's the tortoise, the hare, and the time-traveler
+
+; This program also demonstrates the use of the byte output format.
 
 %format output byte
+
 ; 32 bit words -- terrifying!
-; Probably you could use TBs of RAM finding the reciprocals of very
-; large "full reptend" primes, but I've yet to find any fractions that
-; cause any issues.
+; Some fractions, eg reciprocals of "full reptend" primes can use up a
+; fair bit of memory, but it's less apocalyptic than you might imagine.
+; Worst I've tried is 1/308927, but memory use stays under 150 MB.
 %format word 4
 
 %section state
@@ -37,8 +49,7 @@ stop: .word 0
 digits: .ascii "0123456789"
 
 %section code
-; Just halt right away if denominator is 0
-; TODO: maybe handle better
+; Just halt in case of 0 denominator
 heq [den], 0
 
 j den_pos
