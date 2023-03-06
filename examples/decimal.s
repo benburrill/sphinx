@@ -6,6 +6,9 @@
 
 %format output byte
 ; 32 bit words -- terrifying!
+; Probably you could use TBs of RAM finding the reciprocals of very
+; large "full reptend" primes, but I've yet to find any fractions that
+; cause any issues.
 %format word 4
 
 %section state
@@ -13,12 +16,11 @@
 ; specifically designed so that the repeating portion occurs after a
 ; non-repeating part.
 num: .word 84823
-den: .word 270000
+den: .word 27000
+
 ; Known bugs:
-; * Large-ish numbers can break things, even when just increasing the
-;   denominator (eg 84823/270000 doesn't work for 24 bit word size)
-; * Sometimes there are redundant digits (eg 84823/270000 should be
-;   0.3141(592) but instead it is 0.314159(259)
+; * Large-ish numbers on small word size can result in digits being
+;   printed in infinite loop.
 
 top: .word 0
 addr: .word int_buf
@@ -27,9 +29,9 @@ temp: .word 0
 ; 3 words is enough to store the base-10 digits of a word as bytes
 ; We then reuse the buffer later for checking for repeating fractions
 int_buf:
+prev_num: .word 0
 fast: .word 0
 stop: .word 0
-.word 0
 
 %section const
 digits: .ascii "0123456789"
@@ -76,9 +78,15 @@ j done
 heq [num], 0
 yield '.'
 
+mov [prev_num], [num]
+mov [fast], [num]
+
 wrong_loop:
 hne [stop], 0
+hne [fast], [prev_num]
+
 mov [fast], [num]
+mov [prev_num], [num]
 
 j lookahead
 mov [stop], [num]
