@@ -5,14 +5,21 @@
 ; TODO: explain, simplify, and test this better
 
 %format output byte
-%format word 3
+; 32 bit words -- terrifying!
+%format word 4
 
 %section state
-; 84823/27000 is a pretty bad rational approximation of pi, which I
+; 84823/27000 is a pretty inefficient rational approximation of pi,
 ; specifically designed so that the repeating portion occurs after a
 ; non-repeating part.
 num: .word 84823
-den: .word 27000
+den: .word 270000
+; Known bugs:
+; * Large-ish numbers can break things, even when just increasing the
+;   denominator (eg 84823/270000 doesn't work for 24 bit word size)
+; * Sometimes there are redundant digits (eg 84823/270000 should be
+;   0.3141(592) but instead it is 0.314159(259)
+
 top: .word 0
 addr: .word int_buf
 temp: .word 0
@@ -64,48 +71,34 @@ print_int_digits:
 j print_int_digits
 hgt [addr], int_buf
 
+mov [stop], 0
+j done
+heq [num], 0
 yield '.'
 
-mov [stop], 0
+wrong_loop:
+hne [stop], 0
 mov [fast], [num]
 
-frac_loop:
-    j wrong_loop
-    lookahead:
-        mul [num], [num], 10
-        div [top], [num], [den]
-        mod [num], [num], [den]
-        lbco [temp], digits, [top]
-        yield [temp]
-
-        j done
-        heq [num], [stop]
-
-        mul [fast], [fast], 100
-        mod [fast], [fast], [den]
-        heq [num], [fast]
-    j lookahead
-    halt
-
-    wrong_loop:
-    mov [stop], [num]
-    mov [fast], [num]
-
-    j still_wrong
-    yield '('
-    j lookahead
-    halt
-
-    still_wrong:
+j lookahead
+mov [stop], [num]
+yield '('
+lookahead:
     mul [num], [num], 10
     div [top], [num], [den]
     mod [num], [num], [den]
     lbco [temp], digits, [top]
     yield [temp]
-    j wrong_loop
-    halt
 
-j frac_loop
+    j wrong_loop
+
+    j done
+    heq [num], [stop]
+
+    mul [fast], [fast], 100
+    mod [fast], [fast], [den]
+    heq [num], [fast]
+j lookahead
 halt
 
 
