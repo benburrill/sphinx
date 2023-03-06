@@ -19,8 +19,8 @@
 
 ; 32 bit words -- terrifying!
 ; Some fractions, eg reciprocals of "full reptend" primes can use up a
-; fair bit of memory, but it's less apocalyptic than you might imagine.
-; Worst I've tried is 1/308927, but memory use stays under 150 MB.
+; fair bit of memory, but it's less apocalyptic than you might imagine,
+; at least if you're not trying too hard to break things.
 %format word 4
 
 %section state
@@ -30,18 +30,23 @@
 num: .word 84823
 den: .word 27000
 
+; Some other nice fractions: 511/1024, 100/336, 1/308927
+
 ; Known bugs:
-; * Large-ish numbers on small word size can result in digits being
-;   printed in infinite loop.
+; * The maximum safe denominator is, I think, ~1/100th of the maximum
+;   representable signed power of 10, due to div/mod being signed.
+;   Beyond that, some denominators will work, but you can also get a
+;   variety of fun behavior: infinite loops of digits (sometimes, but
+;   not always preceded by crazy memory use), and crashes.
 
 top: .word 0
-addr: .word int_buf
 temp: .word 0
+addr: .word int_buf
 
 ; 3 words is enough to store the base-10 digits of a word as bytes
 ; We then reuse the buffer later for checking for repeating fractions
 int_buf:
-prev_num: .word 0
+prev: .word 0
 fast: .word 0
 stop: .word 0
 
@@ -89,15 +94,15 @@ j done
 heq [num], 0
 yield '.'
 
-mov [prev_num], [num]
+mov [prev], [num]
 mov [fast], [num]
 
 wrong_loop:
 hne [stop], 0
-hne [fast], [prev_num]
+hne [fast], [prev]
 
 mov [fast], [num]
-mov [prev_num], [num]
+mov [prev], [num]
 
 j lookahead
 mov [stop], [num]
