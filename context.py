@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import contextlib
+import time
 import sys
 
 class ExecutionContext(ABC):
@@ -15,6 +16,10 @@ class ExecutionContext(ABC):
         pass
 
     @abstractmethod
+    def sleep(self, millis):
+        pass
+
+    @abstractmethod
     def on_flag(self, prog, flag):
         pass
 
@@ -27,6 +32,9 @@ class VirtualContext(ExecutionContext):
     def output(self, val):
         pass
 
+    def sleep(self, millis):
+        pass
+
     def on_flag(self, prog, flag):
         pass
 
@@ -35,6 +43,9 @@ class RealContext(ExecutionContext):
     def __init__(self):
         super().__init__()
         self.on_done = lambda: None
+
+    def sleep(self, millis):
+        time.sleep(millis / 1000)
 
     def on_flag(self, prog, flag):
         with contextlib.redirect_stdout(sys.stderr):

@@ -90,6 +90,8 @@ class Program:
                     return ()
             case ('yield', varg):
                 ctx.output(self.bytes(varg))
+            case ('sleep', varg):
+                ctx.sleep(self.unsigned(varg))
             case ('add', out, vleft, vright):
                 self.mf.write_int(self.state, out, self.signed(vleft) + self.signed(vright))
             case ('sub', out, vleft, vright):

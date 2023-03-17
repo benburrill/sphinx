@@ -343,7 +343,7 @@ def read_args(scan, arg_string, namespace, mf):
 instr_table = [
     (set('halt'.split('|')),
      b''),
-    (set('j|yield'.split('|')), 
+    (set('j|yield|sleep'.split('|')),
      b' :inst_arg:'),
     (set('hgt|hlt|heq|hne|hge|hle|sws|sbs'.split('|')),
      b' :inst_arg:,:inst_arg:'),
