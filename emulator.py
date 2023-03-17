@@ -52,6 +52,7 @@ class Emulator:
                     else:
                         self.prog.pc = pc_cont
             case ():
+                assert self.cycle is None
                 return False
         return True
 
