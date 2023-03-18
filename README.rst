@@ -3,10 +3,17 @@ Sphinx ISA
 
 Emulator
 --------
-The emulator requires a recent version of Python, I think >= 3.10.  I
-use Python 3.11.
+``spasm``, the Sphinx assembler/emulator, requires a recent version of
+Python, I think >= 3.10.  I use Python 3.11.
 
-To run the prime loop example: ``python3.11 emulator.py examples/prime_loop.s``
+To run the prime loop example: ``python3.11 -m spasm examples/prime_loop.s``
+
+Alternatively, you may install the ``spasm`` executable:
+
+.. code:: sh
+
+    $ pip3.11 install --editable .
+    $ spasm examples/prime_loop.s
 
 **NOTE:**
 Due to the unfortunate limitations of traditional processors, the
@@ -52,19 +59,19 @@ lws, lwc, lbs, lbc            lws [IMMED], ARG        Set the word at the output
                                                       from the word or byte at the address specified by the
                                                       other argument.
 lwso, lwco, lbso, lbco        lwso [IMMED], ARG, ARG  Like the previous, but with an additional offset argument
-sws, sbs                      sws ARG, ARG            Store the value (word or byte) specified by the second 
+sws, sbs                      sws ARG, ARG            Store the value (word or byte) specified by the second
                                                       argument into the word of state at address specified by
                                                       the first.
-swso, sbso                    swso ARG, ARG, ARG      Again, adds an offset.  Note that the offset is given by 
+swso, sbso                    swso ARG, ARG, ARG      Again, adds an offset.  Note that the offset is given by
                                                       the second argument, not the third one (since it is
                                                       offsetting the first argument).
-yield                         yield ARG               Outputs the argument to the output stream.
-                                                      Future plans: a way to switch output mode between bytes 
-                                                      and int.  Might also rename the instruction.
+yield                         yield ARG               Outputs the argument to the output stream.  See also the 
+                                                      ``%format output`` preprocessor command.
+sleep                         sleep ARG               Sleep for the given number of milliseconds.
 flag                          flag IDENTIFIER         Indicates program status.  The identifier can be anything,
                                                       though some identifiers have somewhat special meaning.
-                                                      ``flag done`` is used to indicate to the user that the 
-                                                      primary computational task is finished and that the 
+                                                      ``flag done`` is used to indicate to the user that the
+                                                      primary computational task is finished and that the
                                                       program is about to enter terminal non-termination.
 ============================= ======================= ==========================================================
 
@@ -86,4 +93,7 @@ Preprocessor commands
 
 - ``%section code | state | const`` - change the section
 - ``%format word NUMBER | inf`` - set the word size in bytes, or ``inf``
-  for infinite words which can represent any integer.
+  for infinite words which can represent any integer.  Default: 2
+- ``%format output signed | unsigned | byte`` - set output format of the
+  ``yield`` instruction.  ``byte`` mode will write the lower byte of the
+  word to stdout.  Default: signed

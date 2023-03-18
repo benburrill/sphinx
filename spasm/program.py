@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from collections import deque
 from collections.abc import Sequence
-from memory import MemoryFormat, signed_bytes_needed
+from .memory import MemoryFormat, signed_bytes_needed
 import enum
 
 

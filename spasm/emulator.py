@@ -1,7 +1,7 @@
-from parser import Parser
-from context import VirtualContext, IntOutputContext
+from .parser import Parser
+from .context import VirtualContext, IntOutputContext
 
-from errors import *
+from .errors import *
 
 
 class Emulator:
@@ -61,8 +61,3 @@ class Emulator:
         # request that execution be paused, returning early from run.
         while self.step():
             pass
-
-
-if __name__ == '__main__':
-    import sys
-    Emulator.run_from_file(sys.argv[1], reraise=False)

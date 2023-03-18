@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import itertools as it
 
-from errors import *
+from .errors import *
 
 
 class Expression(ABC):

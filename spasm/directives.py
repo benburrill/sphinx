@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
-from expressions import Expression
-from dataclasses import dataclass
-from memory import MemoryFormat
 import typing as ty
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from .expressions import Expression
+from .memory import MemoryFormat
 
-from errors import *
+from .errors import *
 
 
 # Seems a bit weird to subclass "Expression" because directives are not

@@ -1,14 +1,14 @@
-import operator
-from collections import ChainMap, deque
-import expressions as expr
-import directives as direc
-from context import output_map
-from memory import MemoryFormat
-from program import Program, CodeTable
 import re
 import sys
+import operator
+from collections import ChainMap, deque
+from . import expressions as expr
+from . import directives as direc
+from .context import output_map
+from .memory import MemoryFormat
+from .program import Program, CodeTable
 
-from errors import *
+from .errors import *
 
 
 class Scanner:
