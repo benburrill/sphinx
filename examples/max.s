@@ -2,7 +2,7 @@
 
 %format word 2
 %section const
-arr: .word 9, 8, 7, 6, 5
+arr: .word 9, 8, 7, 6, 5, 4, 3, 2, 1, 0
 end_arr:
 
 %section state
