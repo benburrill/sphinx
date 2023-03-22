@@ -26,22 +26,10 @@
 ; more interesting because it is it is indirectly using halt-based jumps
 ; to implement halt-based jumps.
 ;
-; In designing a high level language that compiles to Sphinx, we want to
-; be able to have features that will allow us, hopefully rather neatly,
-; to write a true interpreter for sphinxfuck.
+; Halting sphinxfuck programs will jump to reached_halt once they halt.
+; This is accomplished through an alternative execution mode if halting
+; is unavoidable.
 ;
-; NOTE: sphinxfuck programs which terminate are not run properly by this
-; interpreter, and I do not think they should be a focus in trying to
-; come up with high-level language features.  It should be possible to
-; run through the execution of terminating sphinxfuck programs (so long
-; as the interpreter ends in terminal non-termination), but it would
-; take a bit more work, as I think we'd need a separate execution mode
-; that the interpreter would enter if it detects that the program that
-; it is running would halt.
-; The problem is basically that halt propagation causes halting programs
-; to halt before they even start, so while they have the correct halting
-; behavior, they do not produce any output.
-
 ; Programming in sphinxfuck:
 ; ?! is an unconditional halt (the end of the program is also)
 ;   Is that fitting punctuation for programming in sphinxfuck or what?!
@@ -67,10 +55,18 @@
 prog: .ascii "[>+.<@+++++++++++++(!--]?!)>.<@(]"
 
 ; A hello world program translated from brainfuck
+; %format output byte
 ; prog: .ascii "++++++++[(!>++++[(!>++>+++>+++>+<<<<-])?>+>+>->>+[(!<])?<-])?>>.>---.+++++++..+++.>>.<-.<.+++.------.--------.>>+.>++.@(]"
+
+; An example halting sphinxfuck program
+; prog: .ascii "(.+!]"
 end_prog:
 input: .asciiz ""
 %section state
+; In halt mode 0, halts are true halts.  If the program is guaranteed to
+; halt, we switch to halt mode 1, where halts are virtualized.  In halt
+; mode 1, halting instead jumps to reached_halt.
+halt_mode: .word 0
 pc: .word prog
 ip: .word input
 dp: .word data
@@ -84,6 +80,10 @@ depth: .word 0
 data: .zero 1000
 
 %section code
+mov [halt_mode], 1
+; If we would halt under halt_mode 0, switch to halt_mode 1
+j loop
+mov [halt_mode], 0
 loop:
 j end_of_prog
 hge [pc], end_prog
@@ -161,20 +161,38 @@ hge [pc], end_prog
     hz:
     hne [instr], '!'
         lbs [value], [dp]
+        j hz_should_halt
         heq [value], 0
     j inc
+    halt
+
+    hz_should_halt:
+    ; Jump to reached_halt if halt is virtualized, otherwise halt
+    hne [value], 0
+    heq [halt_mode], 0
+    j reached_halt
     halt
 
     hnz:
     hne [instr], '?'
         lbs [value], [dp]
+        j hnz_should_halt
         hne [value], 0
     j inc
+    halt
+
+    hnz_should_halt:
+    ; Jump to reached_halt if halt is virtualized, otherwise halt
+    heq [value], 0
+    heq [halt_mode], 0
+    j reached_halt
     halt
 
     jback:
     hne [instr], ']'
         j head_back
+        ; If halts are virtualized, jump unconditionally
+        hne [halt_mode], 0
         j inc
         halt
 
@@ -217,6 +235,8 @@ hge [pc], end_prog
     jfwd:
     hne [instr], '['
         j head_fwd
+        ; If halts are virtualized, jump unconditionally
+        hne [halt_mode], 0
         j inc
         halt
 
@@ -267,7 +287,10 @@ hge [pc], end_prog
 j loop
 halt
 
+; Reaching the end of the program is an unconditional halt
 end_of_prog:
+heq [halt_mode], 0
+j reached_halt
 halt
 
 no_back_stop:
@@ -279,4 +302,12 @@ hlt [pc], end_prog
 error:
 flag error
 tnt: j tnt
+halt
+
+reached_halt:
+flag sphinxfuck_halt
+; Because we make use of halt propagation for conditional branches in
+; the implementation of sphinxfuck, although we may do anything we want
+; after the sphinxfuck program halts, we must eventually reach tnt.
+j tnt
 halt
