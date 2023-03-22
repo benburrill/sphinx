@@ -12,14 +12,9 @@
 ; zero, ? halts if value at data pointer is non-zero, and @ produces the
 ; done flag.
 ;
-; My hope is that it is possible in principle to convert Sphinx into
-; sphinxfuck, though I'm not totally convinced by that since the way the
-; ( and ) work in sphinxfuck is more restrictive than labels.  However,
-; brainfuck gets away with something similar, so it's probably fine.
-; Actually, I maybe could have skipped the whole parentheses thing since
-; it doesn't give me true labels and a more brainfucky [ and ] probably
-; would have worked just as well... but I'm not sure.  I think I'll just
-; stick with the parentheses.
+; The reason for ( and ) is to mimic Sphinx's labels closely so as to
+; suggest a self-interpreter, though they are not actually as flexible
+; as real labels.
 ;
 ; It would be fairly easy to create a translator from sphinxfuck to
 ; Sphinx, similar to what I did for brainfuck, but an interpreter is
@@ -166,8 +161,8 @@ hge [pc], end_prog
     j inc
     halt
 
-    hz_should_halt:
     ; Jump to reached_halt if halt is virtualized, otherwise halt
+    hz_should_halt:
     hne [value], 0
     heq [halt_mode], 0
     j reached_halt
@@ -181,8 +176,8 @@ hge [pc], end_prog
     j inc
     halt
 
-    hnz_should_halt:
     ; Jump to reached_halt if halt is virtualized, otherwise halt
+    hnz_should_halt:
     heq [value], 0
     heq [halt_mode], 0
     j reached_halt
@@ -290,6 +285,7 @@ halt
 ; Reaching the end of the program is an unconditional halt
 end_of_prog:
 heq [halt_mode], 0
+hlt [pc], end_prog
 j reached_halt
 halt
 
