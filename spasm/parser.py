@@ -149,7 +149,7 @@ ident_re = r'[a-zA-Z_]\w*'
 ident_pat = re.compile(ident_re.encode())
 direc_pat = re.compile(rb'[a-zA-Z_.]\w*')
 
-expr_ops = re.compile(rb'[()+\-*/]')
+expr_ops = re.compile(rb'>>|<<|[()+\-*/&|^~]')
 
 def read_expression_tokens(scan, namespace, mf):
     while scan:
@@ -170,10 +170,14 @@ def read_expression_tokens(scan, namespace, mf):
             break
 
 
-prec = {'+': 0, '-': 0, '*': 1, '/': 1, 'u+': 2, 'u-': 2}
+prec = {'+': 0, '-': 0, '|': 1, '^': 1, '*': 2, '/': 2, '&': 3,
+        '<<': 4, '>>': 4, 'u+': 5, 'u-': 5, 'u~': 5}
 op_table = {'+': operator.add, '-': operator.sub,
+            '|': operator.or_, '^': operator.xor,
             '*': operator.mul, '/': operator.floordiv,
-            'u+': operator.pos, 'u-': operator.neg}
+            '&': operator.and_,
+            '<<': operator.lshift, '>>': operator.rshift,
+            'u+': operator.pos, 'u-': operator.neg, 'u~': operator.inv}
 
 def push_op(rpn, info):
     tok, origin = info
@@ -200,6 +204,8 @@ def shunt(tokens):
                 tok = 'u+'
             elif tok == '-':
                 tok = 'u-'
+            elif tok == '~':
+                tok = 'u~'
         if tok == '(':
             ops.append((tok, origin))
         elif tok == ')':
@@ -349,7 +355,7 @@ instr_table = [
      b' :inst_arg:,:inst_arg:'),
     (set('mov|lws|lwc|lbs|lbc'.split('|')),
      b' [:expr:],:inst_arg:'),
-    (set('add|sub|mul|div|mod|lwso|lwco|lbso|lbco'.split('|')),
+    (set('add|sub|mul|div|mod|and|or|xor|asl|asr|lwso|lwco|lbso|lbco'.split('|')),
      b' [:expr:],:inst_arg:,:inst_arg:'),
     (set('swso|sbso'.split('|')),
      b' :inst_arg:,:inst_arg:,:inst_arg:'),

@@ -104,6 +104,18 @@ class Program:
             case ('mod', out, vleft, vright):
                 try: self.mf.write_int(self.state, out, self.signed(vleft) % self.signed(vright))
                 except ZeroDivisionError: pass
+            case ('and', out, vleft, vright):
+                self.mf.write_int(self.state, out, self.signed(vleft) & self.signed(vright))
+            case ('or', out, vleft, vright):
+                self.mf.write_int(self.state, out, self.signed(vleft) | self.signed(vright))
+            case ('xor', out, vleft, vright):
+                self.mf.write_int(self.state, out, self.signed(vleft) ^ self.signed(vright))
+            case ('asl', out, vleft, vright):
+                shift_count = self.signed(vright) % (self.mf.word_size * 8 + 1)
+                self.mf.write_int(self.state, out, self.signed(vleft) << shift_count)
+            case ('asr', out, vleft, vright):
+                shift_count = self.signed(vright) % (self.mf.word_size * 8 + 1)
+                self.mf.write_int(self.state, out, self.signed(vleft) >> shift_count)
             case ('mov', out, varg):
                 self.mf.write_word(self.state, out, self.bytes(varg))
             case ('lws', out, vsa):
