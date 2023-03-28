@@ -19,7 +19,12 @@ from .emulator import Emulator
 import sys
 
 def main():
-    Emulator.run_from_file(sys.argv[1], reraise=False)
+    if len(sys.argv) != 2:
+        print(f'Usage: spasm <file>', file=sys.stderr)
+        return 1
+    else:
+        Emulator.run_from_file(sys.argv[1], reraise=False)
+        return 0
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
