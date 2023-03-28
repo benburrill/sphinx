@@ -73,17 +73,21 @@ class ByteOutputContext(RealContext):
         self.last_byte = b'\n'
 
     def on_flag(self, prog, flag):
-        sys.stdout.flush()
         if self.last_byte != b'\n':
+            sys.stdout.flush()
             print(file=sys.stderr)
             self.last_byte = b'\n'
 
         super().on_flag(prog, flag)
 
     def output(self, word):
-        low_byte = word[:1]
+        low_byte = bytes(word[:1])
         sys.stdout.buffer.write(low_byte)
-        self.last_byte = bytes(low_byte)
+        self.last_byte = low_byte
+
+        # sys.stdout.buffer isn't line buffered, even if sys.stdout is
+        if low_byte == b'\n' and sys.stdout.line_buffering:
+            sys.stdout.flush()
 
 
 output_map = {
