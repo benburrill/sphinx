@@ -6,14 +6,14 @@ Emulator
 ``spasm``, the Sphinx assembler/emulator, requires a recent version of
 Python, I think >= 3.10.  I use Python 3.11.
 
-To run the prime loop example: ``python3.11 -m spasm examples/prime_loop.s``
+To run the countdown example: ``python3.11 -m spasm examples/countdown.s``
 
 Alternatively, you may install the ``spasm`` executable:
 
 .. code:: sh
 
     $ pip3.11 install --editable .
-    $ spasm examples/prime_loop.s
+    $ spasm examples/countdown.s
 
 **NOTE:**
 Due to the unfortunate limitations of traditional processors, the
