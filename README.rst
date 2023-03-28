@@ -28,7 +28,7 @@ Instructions
 Arguments to most instructions in Sphinx can be any of the following
 forms::
 
-    ARG ::= IMMED | [IMMED] | {IMMED}
+    ARG = IMMED | [IMMED] | {IMMED}
 
 - IMMED - immediate values.  These can be any assembly-time expression
   using labels and numeric literals.  For example: ``8``, ``my_label``,
@@ -70,9 +70,8 @@ yield                                            yield ARG               Outputs
 sleep                                            sleep ARG               Sleep for the given number of milliseconds.
 flag                                             flag IDENTIFIER         Indicates program status.  The identifier can be anything,
                                                                          though some identifiers have somewhat special meaning.
-                                                                         ``flag done`` is used to indicate to the user that the
-                                                                         primary computational task is finished and that the
-                                                                         program is about to enter terminal non-termination.
+                                                                         ``flag done`` is typically used to indicate successful
+                                                                         non-termination.
 ================================================ ======================= ==========================================================
 
 
