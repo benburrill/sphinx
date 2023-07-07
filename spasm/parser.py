@@ -351,7 +351,7 @@ instr_table = [
      b''),
     (set('j|yield|sleep'.split('|')),
      b' :inst_arg:'),
-    (set('hgt|hlt|heq|hne|hge|hle|sws|sbs'.split('|')),
+    (set('heq|hne|hlt|hltu|hgt|hgtu|hle|hleu|hge|hgeu|sws|sbs'.split('|')),
      b' :inst_arg:,:inst_arg:'),
     (set('mov|lws|lwc|lbs|lbc'.split('|')),
      b' [:expr:],:inst_arg:'),

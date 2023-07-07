@@ -73,14 +73,26 @@ class Program:
             case ('hlt', vleft, vright):
                 if self.signed(vleft) < self.signed(vright):
                     return ()
+            case ('hltu', vleft, vright):
+                if self.unsigned(vleft) < self.unsigned(vright):
+                    return ()
             case ('hgt', vleft, vright):
                 if self.signed(vleft) > self.signed(vright):
+                    return ()
+            case ('hgtu', vleft, vright):
+                if self.unsigned(vleft) > self.unsigned(vright):
                     return ()
             case ('hle', vleft, vright):
                 if self.signed(vleft) <= self.signed(vright):
                     return ()
+            case ('hleu', vleft, vright):
+                if self.unsigned(vleft) <= self.unsigned(vright):
+                    return ()
             case ('hge', vleft, vright):
                 if self.signed(vleft) >= self.signed(vright):
+                    return ()
+            case ('hgeu', vleft, vright):
+                if self.unsigned(vleft) >= self.unsigned(vright):
                     return ()
             case ('heq', vleft, vright):
                 if self.signed(vleft) == self.signed(vright):
@@ -91,6 +103,8 @@ class Program:
             case ('yield', varg):
                 ctx.output(self.bytes(varg))
             case ('sleep', varg):
+                # I'm tempted to use abs(self.big(varg)) here, but I
+                # think that's too weird even for Sphinx.
                 ctx.sleep(self.unsigned(varg))
             case ('add', out, vleft, vright):
                 self.mf.write_int(self.state, out, self.signed(vleft) + self.signed(vright))
@@ -121,61 +135,61 @@ class Program:
             case ('lws', out, vsa):
                 self.mf.write_word(
                     self.state, out,
-                    self.mf.read_word(self.state, self.unsigned(vsa))
+                    self.mf.read_word(self.state, self.big(vsa))
                 )
             case ('lbs', out, vsa):
                 self.mf.write_int(
                     self.state, out,
-                    self.mf.read_byte(self.state, self.unsigned(vsa))
+                    self.mf.read_byte(self.state, self.big(vsa))
                 )
             case ('lwso', out, vsa, voff):
                 self.mf.write_word(
                     self.state, out,
-                    self.mf.read_word(self.state, self.unsigned(vsa) + self.signed(voff))
+                    self.mf.read_word(self.state, self.big(vsa) + self.signed(voff))
                 )
             case ('lbso', out, vsa, voff):
                 self.mf.write_int(
                     self.state, out,
-                    self.mf.read_byte(self.state, self.unsigned(vsa) + self.signed(voff))
+                    self.mf.read_byte(self.state, self.big(vsa) + self.signed(voff))
                 )
             case ('lwc', out, vca):
                 self.mf.write_word(
                     self.state, out,
-                    self.mf.read_word(self.const, self.unsigned(vca))
+                    self.mf.read_word(self.const, self.big(vca))
                 )
             case ('lbc', out, vca):
                 self.mf.write_int(
                     self.state, out,
-                    self.mf.read_byte(self.const, self.unsigned(vca))
+                    self.mf.read_byte(self.const, self.big(vca))
                 )
             case ('lwco', out, vca, voff):
                 self.mf.write_word(
                     self.state, out,
-                    self.mf.read_word(self.const, self.unsigned(vca) + self.signed(voff))
+                    self.mf.read_word(self.const, self.big(vca) + self.signed(voff))
                 )
             case ('lbco', out, vca, voff):
                 self.mf.write_int(
                     self.state, out,
-                    self.mf.read_byte(self.const, self.unsigned(vca) + self.signed(voff))
+                    self.mf.read_byte(self.const, self.big(vca) + self.signed(voff))
                 )
             case ('sws', vsa, varg):
                 self.mf.write_int(
-                    self.state, self.unsigned(vsa),
+                    self.state, self.big(vsa),
                     self.signed(varg)
                 )
             case ('sbs', vsa, varg):
                 self.mf.write_byte(
-                    self.state, self.unsigned(vsa),
+                    self.state, self.big(vsa),
                     self.signed(varg)
                 )
             case ('swso', vsa, voff, varg):
                 self.mf.write_int(
-                    self.state, self.unsigned(vsa) + self.signed(voff),
+                    self.state, self.big(vsa) + self.signed(voff),
                     self.signed(varg)
                 )
             case ('sbso', vsa, voff, varg):
                 self.mf.write_byte(
-                    self.state, self.unsigned(vsa) + self.signed(voff),
+                    self.state, self.big(vsa) + self.signed(voff),
                     self.signed(varg)
                 )
             case ('flag', flag):
@@ -209,10 +223,23 @@ class Program:
 
         return int.from_bytes(word, 'little', signed=signed)
 
+    # Unsigned interprets loaded values as signed.  It is weird in that
+    # it preserves immediate values as given and does not word-wrap them
+    # This means that values may be larger than they "should" be.
     def signed(self, spec):
         return self.read_spec(spec, signed=True, as_bytes=False)
 
+    # Unsigned gives true, word-wrapped unsigned values.
     def unsigned(self, spec):
+        return int.from_bytes(self.bytes(spec), 'little', signed=False)
+
+    # Typically used for memory addresses, big is like signed in that it
+    # preserves immediate values.  However, it treats loaded values as
+    # unsigned.  It is used for base address of load/store instructions
+    # and so basically allows for a form of expanded memory by labeling
+    # blocks of memory that would otherwise be unaddressable and using
+    # those labels as immediate base addresses in lwso, etc.
+    def big(self, spec):
         return self.read_spec(spec, signed=False, as_bytes=False)
 
     def bytes(self, spec):

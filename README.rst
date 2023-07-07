@@ -44,35 +44,35 @@ forms::
 
 Instructions are allowed in the code section only.
 
-================================================ ======================= ==========================================================
-Instructions                                     Syntax                  Description
-================================================ ======================= ==========================================================
-halt                                             halt                    Unconditional halt
-heq, hne, hlt, hgt, hle, hge                     heq ARG, ARG            Conditional halt.  Compares the arguments and halts if the
-                                                                         condition is met.
-j                                                j ARG                   Jump to the specified address if not jumping would lead to
-                                                                         halting.
-add, sub, mul, div, mod, and, or, xor, asl, asr  add [IMMED], ARG, ARG   Arithmetic instructions, outputting to the given address
-                                                                         in state.
-mov                                              mov [IMMED], ARG        Set the word at the output address.
-lws, lwc, lbs, lbc                               lws [IMMED], ARG        Set the word at the output address to the value loaded
-                                                                         from the word or byte at the address specified by the
-                                                                         other argument.
-lwso, lwco, lbso, lbco                           lwso [IMMED], ARG, ARG  Like the previous, but with an additional offset argument
-sws, sbs                                         sws ARG, ARG            Store the value (word or byte) specified by the second
-                                                                         argument into the word of state at address specified by
-                                                                         the first.
-swso, sbso                                       swso ARG, ARG, ARG      Again, adds an offset.  Note that the offset is given by
-                                                                         the second argument, not the third one (since it is
-                                                                         offsetting the first argument).
-yield                                            yield ARG               Outputs the argument to the output stream.  See also the 
-                                                                         ``%format output`` preprocessor command.
-sleep                                            sleep ARG               Sleep for the given number of milliseconds.
-flag                                             flag IDENTIFIER         Indicates program status.  The identifier can be anything,
-                                                                         though some identifiers have somewhat special meaning.
-                                                                         ``flag done`` is typically used to indicate successful
-                                                                         non-termination.
-================================================ ======================= ==========================================================
+===================================================== ======================= ==========================================================
+Instructions                                          Syntax                  Description
+===================================================== ======================= ==========================================================
+halt                                                  halt                    Unconditional halt
+heq, hne, hlt, hgt, hle, hge, hltu, hgtu, hleu, hgeu  heq ARG, ARG            Conditional halt.  Compares the arguments and halts if the
+                                                                              condition is met.  Unsigned comparisons have the suffix u.
+j                                                     j ARG                   Jump to the specified address if not jumping would lead to
+                                                                              halting.
+add, sub, mul, div, mod, and, or, xor, asl, asr       add [IMMED], ARG, ARG   Arithmetic instructions, outputting to the given address
+                                                                              in state.
+mov                                                   mov [IMMED], ARG        Set the word at the output address.
+lws, lwc, lbs, lbc                                    lws [IMMED], ARG        Set the word at the output address to the value loaded
+                                                                              from the word or byte at the address specified by the
+                                                                              other argument.
+lwso, lwco, lbso, lbco                                lwso [IMMED], ARG, ARG  Like the previous, but with an additional offset argument
+sws, sbs                                              sws ARG, ARG            Store the value (word or byte) specified by the second
+                                                                              argument into the word of state at address specified by
+                                                                              the first.
+swso, sbso                                            swso ARG, ARG, ARG      Again, adds an offset.  Note that the offset is given by
+                                                                              the second argument, not the third one (since it is
+                                                                              offsetting the first argument).
+yield                                                 yield ARG               Outputs the argument to the output stream.  See also the 
+                                                                              ``%format output`` preprocessor command.
+sleep                                                 sleep ARG               Sleep for the given number of milliseconds.
+flag                                                  flag IDENTIFIER         Indicates program status.  The identifier can be anything,
+                                                                              though some identifiers have somewhat special meaning.
+                                                                              ``flag done`` is typically used to indicate successful
+                                                                              non-termination.
+===================================================== ======================= ==========================================================
 
 
 Data directives
