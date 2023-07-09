@@ -30,9 +30,10 @@ class Emulator:
             ps.handle_error(err)
             if reraise:
                 raise
-            return
+            return 1
 
         cls(prog, rctx=rctx).run()
+        return 0
 
     def step(self):
         match self.prog.exec(self.rctx):
