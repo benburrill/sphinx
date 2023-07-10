@@ -19,11 +19,11 @@ from .emulator import Emulator
 import sys
 
 def main():
-    if len(sys.argv) != 2:
-        print(f'Usage: spasm <file>', file=sys.stderr)
+    if len(sys.argv) < 2:
+        print(f'Usage: spasm <file> [<args>...]', file=sys.stderr)
         return 1
     else:
-        Emulator.run_from_file(sys.argv[1], reraise=False)
+        Emulator.run_from_file(sys.argv[1], reraise=False, args=sys.argv[2:])
         return 0
 
 if __name__ == '__main__':

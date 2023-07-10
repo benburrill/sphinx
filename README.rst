@@ -80,12 +80,13 @@ Data directives
 Allowed in the state and const sections
 
 - ``.ascii "STRING"``
-- ``.asciiz "STRING"``
+- ``.asciiz "STRING"`` - Null-terminated string
+- ``.asciip "STRING"`` - String prefixed with a word holding length of string in bytes
 - ``.word IMMED``
 - ``.byte IMMED``
 - ``.fill IMMED, IMMED`` - Fill given number of bytes with first value
 - ``.zero IMMED`` - Fill given number of bytes with zeros
-
+- ``.arg IDENT (ascii | asciiz | asciip | word | byte)`` - See section on command-line arguments
 
 Preprocessor commands
 ---------------------
@@ -96,3 +97,59 @@ Preprocessor commands
 - ``%format output signed | unsigned | byte`` - set output format of the
   ``yield`` instruction.  ``byte`` mode will write the lower byte of the
   word to stdout.  Default: signed
+- ``%argv`` -- See section on command-line arguments
+
+Command-line arguments
+----------------------
+Sphinx assembly has support for specifying the inputs that an assembly
+program requires.  These may be passed on the command-line to ``spasm``.
+
+There's no clear "correct" way for arguments to be treated (eg should
+they be in ``state`` or ``const``, where, and with what format?), and
+any specific way that would be convenient for me in implementing Halt is
+Defeat seemed too specific, so Sphinx provides a lot of flexibility.
+
+The arguments are defined using the ``%argv`` command in a manner
+similar to (but only a tiny subset of) docopt:
+
+- ``<IDENT>`` defines a named argument
+- ``ARG...`` means 1 or more
+- ``[ARG]`` means optional
+
+For example: ``%argv <x> [<y>...]`` specifies that the program expects
+an argument <x> followed by 0 or more arguments <y>.
+
+Once the argument variables are defined with ``%argv``, you get to
+choose where and how the arguments should be placed into memory using
+the ``.arg`` data directive.
+
+``.arg x asciiz`` directs <x> to placed into memory as a null-terminated
+string.
+
+``.arg y word`` directs <y> to be parsed as a decimal integer and placed
+into memory as words.  Since we specified 0 or more arguments as <y>,
+all of the arguments passed will be parsed and placed at increasing
+addresses in memory.
+
+If you want multiple strings associated with a single argument variable,
+you may want to have an array of pointers to those strings.  This may be
+done with the ``array`` specifier, eg ``.arg y asciiz array``.
+
+If there were no arguments passed as y, this array will still include a
+dummy entry pointing to the next address in memory.  This shouldn't be
+considered as "part" of the array, but it may be useful for iterating
+over it.
+
+Additionally for plain ``ascii`` (not ``asciiz`` or ``asciip``):
+
+- The ``array`` will always have an extra entry pointing to the end (so
+  an empty array has 2 identical entries)
+- If there's no ``array``, multiple arguments will be separated by
+  single spaces.
+
+There is no direct way to determine how many arguments were passed for
+each argument variable.  However, there is a special assembly-time
+variable ``$argc`` which gives the total number of arguments passed.
+From this, you can infer the number of arguments associated with each
+argument variable.  Alternatively, you may place a label at the end of
+an argument directive and iterate through until the label is reached.

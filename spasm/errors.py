@@ -30,3 +30,6 @@ class CyclicDependencyError(ExpressionError):
 
 class EvaluationError(ExpressionError):
     pass
+
+class UsageError(AssemblerError):
+    pass

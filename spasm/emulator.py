@@ -19,8 +19,8 @@ class Emulator:
         print(f'    Emulator efficiency: {self.rctx.total_time / emulation_time:.2%}')
 
     @classmethod
-    def run_from_file(cls, fname, reraise=False):
-        ps = Parser()
+    def run_from_file(cls, fname, reraise=False, args=None):
+        ps = Parser(args)
 
         try:
             ps.parse_file(fname)

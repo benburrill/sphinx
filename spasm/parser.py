@@ -158,7 +158,10 @@ def read_expression_tokens(scan, namespace, mf):
         if op is not None:
             yield op.decode(), scan.get_origin()
 
+        prefixed = scan.read_string(b'$')
         ident = scan.read(ident_pat)
+        if prefixed:
+            ident = b'$' + (ident or b'')
         if ident is not None:
             yield expr.Variable(scan.get_origin(), namespace, ident.decode()), scan.get_origin()
 
@@ -375,7 +378,7 @@ def read_instruction(scan, namespace, mf):
     raise AssemblerSyntaxError(f'{instr_name} is not an instruction', scan.get_origin())
 
 
-def read_data_direc(scan, namespace, mf):
+def add_data_direc(scan, namespace, mf, section, argv):
     direc_name = scan.read(direc_pat)
     if direc_name is None: raise AssemblerSyntaxError.unhelpful(scan.get_origin())
     direc_name = direc_name.decode()
@@ -383,27 +386,173 @@ def read_data_direc(scan, namespace, mf):
     match direc_name:
         case '.ascii':
             string_expr, = read_args(scan, b' :string:', namespace, mf)
-            return direc.AsciiDirective(string_expr.get())
+            section.append(direc.AsciiDirective(string_expr.get()))
         case '.asciiz':
             string_expr, = read_args(scan, b' :string:', namespace, mf)
-            return direc.AsciiDirective(string_expr.get() + b'\0')
+            section.append(direc.AsciiDirective(string_expr.get() + b'\0'))
+        case '.asciip':
+            # The .asciip directive prefixes the string with a word that
+            # holds the length of the string in bytes.
+            string_expr, = read_args(scan, b' :string:', namespace, mf)
+            string = string_expr.get()
+            section.append(direc.WordDirective([expr.Value(len(string))], mf))
+            section.append(direc.AsciiDirective(string))
         case '.word':
             word_exprs = list(read_args(scan, b' :multi_expr:', namespace, mf))
-            return direc.WordDirective(word_exprs, mf)
+            section.append(direc.WordDirective(word_exprs, mf))
         case '.byte':
             byte_exprs = list(read_args(scan, b' :multi_expr:', namespace, mf))
-            return direc.ByteDirective(byte_exprs)
+            section.append(direc.ByteDirective(byte_exprs))
         case '.fill':
             fill_expr, length_expr = read_args(scan, b' :expr:,:expr:', namespace, mf)
-            return direc.FillDirective(fill_expr, length_expr, scan.get_origin())
+            section.append(direc.FillDirective(fill_expr, length_expr, scan.get_origin()))
         case '.zero':
             length_expr, = read_args(scan, b' :expr:', namespace, mf)
-            return direc.FillDirective(expr.Value(0), length_expr, scan.get_origin())
+            section.append(direc.FillDirective(expr.Value(0), length_expr, scan.get_origin()))
+        case '.arg':
+            expect_space(scan)
+            var_name = scan.read(ident_pat)
+            if var_name is None:
+                raise AssemblerSyntaxError('Expected argument variable name', scan.get_origin())
+            args = argv.get(var_name)
+            if args is None:
+                raise AssemblerError(f'No argument variable {var_name.decode()}', scan.get_origin())
+            expect_space(scan)
+            arg_format = scan.read(ident_pat)
+            if arg_format is None:
+                raise AssemblerSyntaxError('Expected argument format', scan.get_origin())
+            elif arg_format in {b'word', b'byte'}:
+                values = []
+                for arg in args:
+                    try:
+                        values.append(expr.Value(int(arg)))
+                    except ValueError:
+                        raise UsageError(
+                            f'Argument <{var_name.decode()}> got invalid int value: {arg}',
+                            scan.get_origin()
+                        )
+                if arg_format == b'word':
+                    section.append(direc.WordDirective(values, mf))
+                elif arg_format == b'byte':
+                    section.append(direc.ByteDirective(values))
+            elif arg_format in {b'ascii', b'asciiz', b'asciip'}:
+                add_array = (scan.read(whitespace) is not None) and scan.read_string(b'array')
+                # Always have at least one dummy entry for array
+                entries = [[]] if not args else []
+                if arg_format == b'ascii':
+                    # Without an array, there's no way to distinguish
+                    # multiple args in ascii format.  So just treat it
+                    # as a single arg joined by spaces.
+                    if args and not add_array:
+                        args = [' '.join(args)]
+                    for arg in args:
+                        entries.append([direc.AsciiDirective(arg.encode('utf-8'))])
+                    # Add dummy entry to end
+                    entries.append([])
+                elif arg_format == b'asciiz':
+                    for arg in args:
+                        entries.append([direc.AsciiDirective(arg.encode('utf-8') + b'\0')])
+                elif arg_format == b'asciip':
+                    for arg in args:
+                        string = arg.encode('utf-8')
+                        entries.append([
+                            direc.WordDirective([expr.Value(len(string))], mf),
+                            direc.AsciiDirective(string)
+                        ])
+
+                if add_array:
+                    # One array item for each entry, entries begin after
+                    # the array.
+                    idx = len(section) + len(entries)
+                    for entry in entries:
+                        section.append(direc.WordDirective([expr.Label(
+                            scan.get_origin(), '$arg', section, idx
+                        )], mf))
+                        idx += len(entry)
+                for entry in entries:
+                    section.extend(entry)
+
+            if not is_end(scan):
+                raise AssemblerSyntaxError.unhelpful(scan.get_origin())
         case _:
             raise AssemblerSyntaxError(
                 f'{direc_name} is not a data directive',
                 scan.get_origin()
             )
+
+
+# The way argv parsing works currently is super limited:
+# ARG = <name>, ARG..., [ARG]
+# It's meant to resemble docopt and possibly be extensible in the future
+# but currently only a very tiny subset of docopt is supported.
+def read_argv_arg_spec(scan):
+    result = None
+    if scan.read_string(b'<'):
+        name = scan.read(ident_pat)
+        if not scan.read_string(b'>'):
+            raise AssemblerSyntaxError.unhelpful(scan.get_origin())
+        result = name, 1, 1
+    elif scan.read_string(b'['):
+        result = read_argv_arg_spec(scan)
+        if not scan.read_string(b']'):
+            raise AssemblerSyntaxError.unhelpful(scan.get_origin())
+        if result is not None:
+            name, _, max_arg = result
+            result = name, 0, max_arg
+
+    if result is not None and scan.read_string(b'...'):
+        name, min_arg, _ = result
+        result = name, min_arg, None
+
+    return result
+
+
+def process_argv(scan, args):
+    arg_specs = []
+    start = scan.pos
+    end = scan.pos
+    while scan:
+        spec = read_argv_arg_spec(scan)
+        if spec is not None:
+            end = scan.pos
+            arg_specs.append(spec)
+            if scan.read(whitespace) is not None:
+                scan.read(ignore)
+                continue
+
+        if not is_end(scan):
+            raise AssemblerSyntaxError.unhelpful(scan.get_origin())
+
+    usage = scan.string[start:end].decode('utf-8')
+
+    tail = {}
+    args = list(args)
+    while arg_specs:
+        name, min_arg, max_arg = arg_specs[-1]
+        if min_arg == max_arg == 1:
+            if not args:
+                return None, usage
+            arg_specs.pop()
+            tail.setdefault(name, []).append(args.pop())
+        else:
+            break
+
+    result = {}
+    for name, min_arg, max_arg in arg_specs:
+        matching = args[:max_arg]
+        del args[:max_arg]
+        if len(matching) < min_arg:
+            return None, usage
+        result.setdefault(name, []).extend(matching)
+
+    for name, tail_args in tail.items():
+        result.setdefault(name, []).extend(tail_args)
+
+    if args:
+        return None, usage
+    return result, usage
+
+
 
 
 meta_tok = re.compile(tok_re({
@@ -412,11 +561,13 @@ meta_tok = re.compile(tok_re({
 }).encode())
 
 class Parser:
-    def __init__(self):
+    def __init__(self, args=None):
         self.sources = {}
         self.globals = {}
         self.format = {}
         self.sections = {'code': [], 'const': [], 'state': []}
+        self.args = args if args is not None else []
+        self.argv = {}
 
         # The actual initial word size doesn't matter here, we just need
         # a shared MemoryFormat to pass around to expressions even it
@@ -506,15 +657,18 @@ class Parser:
 
 
     def handle_error(self, err):
-        print('Assembler error:')
+        if not isinstance(err, UsageError):
+            print('Assembler error:', file=sys.stderr)
         while err is not None:
-            if isinstance(err, AssemblerError):
+            if isinstance(err, UsageError):
+                print(err, file=sys.stderr)
+            elif isinstance(err, AssemblerError):
                 print(err, file=sys.stderr)
                 origin = err.origin
                 print(f'    File {origin.file!r}, line {origin.line}', file=sys.stderr)
                 print(f'    > {self.sources[origin.file][origin.line-1].decode().strip()}', file=sys.stderr)
             else:
-                print(f'{type(err).__name__}: {err}')
+                print(f'{type(err).__name__}: {err}', file=sys.stderr)
 
             err = err.__cause__
 
@@ -537,7 +691,7 @@ class Parser:
         # namespace['something'] = Variable(origin, self.globals, 'something')
         # Or we could do the ChainMap, but not to self.globals, but our
         # own globals... but then what?
-        namespace = {} # ChainMap({}, self.globals)
+        namespace = {'$argc': expr.Value(len(self.args))} # ChainMap({}, self.globals)
 
         for line_number, line in enumerate(lines, start=1):
             scan = Scanner(line, file=file, line=line_number)
@@ -574,6 +728,12 @@ class Parser:
                                         f'which conflicts with the value {setting}',
                                         scan.get_origin()
                                     )
+                            case b'argv':
+                                expect_space(scan)
+                                new_argv, usage = process_argv(scan, self.args)
+                                if new_argv is None:
+                                    raise UsageError(f'Usage: {scan.file} {usage}', scan.get_origin())
+                                self.argv = new_argv
                             case None:
                                 raise AssemblerSyntaxError.unhelpful(scan.get_origin())
                             case bad_command:
@@ -592,8 +752,6 @@ class Parser:
 
 
             if section == 'code':
-                directive = read_instruction(scan, namespace, self.mf)
+                self.sections[section].append(read_instruction(scan, namespace, self.mf))
             else:
-                directive = read_data_direc(scan, namespace, self.mf)
-
-            self.sections[section].append(directive)
+                add_data_direc(scan, namespace, self.mf, self.sections[section], self.argv)
