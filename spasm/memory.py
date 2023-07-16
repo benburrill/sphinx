@@ -75,3 +75,9 @@ class MemoryFormat:
 
     def copy(self):
         return self.__copy__()
+
+    def is_safe_unsigned(self, num):
+        return 0 <= num <= self.word_mask
+
+    def is_safe_signed(self, num):
+        return signed_bytes_needed(num) <= self.word_size

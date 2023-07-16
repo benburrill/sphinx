@@ -574,9 +574,9 @@ class Parser:
         # doesn't have a concrete value yet.
         self.mf = MemoryFormat(2)
 
-    def get_program(self):
+    def get_program(self, warn=True):
         self.mf.set_word_size(self.format.get('word', 2))
-        return Program(
+        prog = Program(
             mf=self.mf.copy(), pc=0,
             code=CodeTable(tuple([d.get() for d in self.sections['code']])),
             const=b''.join([d.get() for d in self.sections['const']]),
@@ -584,6 +584,15 @@ class Parser:
                 [d.get() for d in self.sections['state']]
             ))
         )
+
+        if warn:
+            if not prog.mf.is_safe_unsigned(len(prog.state) - 1):
+                print(f'Warning: state section too large ({len(prog.state)} bytes) to be word-addressable', file=sys.stderr)
+            if not prog.mf.is_safe_unsigned(len(prog.const) - 1):
+                print(f'Warning: state section too large ({len(prog.const)} bytes) to be word-addressable', file=sys.stderr)
+            if not prog.mf.is_safe_signed(len(prog.code) - 1):
+                print(f'Warning: code section too large ({len(prog.code)} instructions) to be word-addressable', file=sys.stderr)
+        return prog
 
     def get_output_context(self):
         return output_map[self.format.get('output', 'signed')]()
