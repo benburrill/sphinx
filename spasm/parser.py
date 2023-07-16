@@ -586,11 +586,11 @@ class Parser:
         )
 
         if warn:
-            if not prog.mf.is_safe_unsigned(len(prog.state) - 1):
+            if not prog.mf.is_safe_unsigned(len(prog.state)):
                 print(f'Warning: state section too large ({len(prog.state)} bytes) to be word-addressable', file=sys.stderr)
-            if not prog.mf.is_safe_unsigned(len(prog.const) - 1):
+            if not prog.mf.is_safe_unsigned(len(prog.const)):
                 print(f'Warning: state section too large ({len(prog.const)} bytes) to be word-addressable', file=sys.stderr)
-            if not prog.mf.is_safe_signed(len(prog.code) - 1):
+            if not prog.mf.is_safe_signed(len(prog.code)):
                 print(f'Warning: code section too large ({len(prog.code)} instructions) to be word-addressable', file=sys.stderr)
         return prog
 
