@@ -123,8 +123,9 @@ Relevant code can be in `spasm/program.py <https://github.com/benburrill/sphinx/
 It works kinda like a depth-first search in the tree of possible paths
 of execution.  Since we have finitely bounded state, the *only* way not
 to halt is for there to be a repeating loop.  So at a jump point, we're
-recursively searching for a path with a repeated state.  Failing that,
-ie when halting would be inevitable, we jump.
+recursively searching to see if there's a repeated state by not jumping.
+Failing that, ie when halting would be inevitable, we jump.  Regardless,
+we will know if we should jump in finite (albeit possibly huge) time.
 
 More theoretically, Sphinx's halting problem isn't undecidable because
 it isn't Turing complete - it *requires* finitely bounded state in order
