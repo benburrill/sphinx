@@ -16,11 +16,14 @@ Python, I think >= 3.10.  I use Python 3.11.
 
 It has no other dependencies and can be run directly without
 installation.  To run the countdown example:
-``python3 -m spasm examples/countdown.s``
+
+.. code::
+
+    $ python3 -m spasm examples/countdown.s
 
 Alternatively, you may install the ``spasm`` executable:
 
-.. code:: sh
+.. code::
 
     $ pip3 install --editable .
     $ spasm examples/countdown.s
@@ -52,7 +55,7 @@ forms::
   values in the (read-only) const section instead, which usually holds
   the inputs to the program.  For example: ``{input_number}``
 
-Sphinx follows the convention of placing the destination first, ie
+Sphinx follows the convention of placing the destination first, eg
 ``mov [dest], [source]``
 
 Instructions are allowed in the code section only.
@@ -112,6 +115,26 @@ Preprocessor commands
   ``yield`` instruction.  ``byte`` mode will write the lower byte of the
   word to stdout.  Default: signed
 - ``%argv`` -- See section on command-line arguments
+
+How does it work?
+=================
+Time travel.  Oh you mean the emulator?  There's no magic to it.
+Relevant code can be in `spasm/program.py <https://github.com/benburrill/sphinx/blob/24e80ef39aaae1f9aff020a275baea03b64285cc/spasm/program.py#L291-L367>`_.
+It works kinda like a depth-first search in the tree of possible paths
+of execution.  Since we have finitely bounded state, the *only* way not
+to halt is for there to be a repeating loop.  So at a jump point, we're
+recursively searching for a path with a repeated state.  Failing that,
+ie when halting would be inevitable, we jump.
+
+More theoretically, Sphinx's halting problem isn't undecidable because
+it isn't Turing complete - it *requires* finitely bounded state in order
+to work, and cannot be generalized to an unbounded version (though I
+haven't let that stop me from adding ``%format word inf``).  Although
+Sphinx's execution depends intimately on its own halting problem (which
+is seemingly problematic regardless of the fact it has finite state),
+Sphinx's freedom to act on this information for itself is limited.
+Sphinx can't test if something will halt without committing to run it if
+it won't.
 
 SIGBOVIK
 ========
