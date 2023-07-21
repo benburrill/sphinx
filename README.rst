@@ -1,18 +1,28 @@
+==========
 Sphinx ISA
 ==========
+Sphinx is an instruction set architecture intended for low-power
+embedded hypercomputers, which relies only on a Turing jump instruction
+(along with an assortment of conditional halt instructions) for control
+flow.
+
+This repository houses a working Sphinx emulator written in Python and
+aims also to provide an official specification for the architecture.
 
 Emulator
---------
+========
 ``spasm``, the Sphinx assembler/emulator, requires a recent version of
 Python, I think >= 3.10.  I use Python 3.11.
 
-To run the countdown example: ``python3.11 -m spasm examples/countdown.s``
+It has no other dependencies and can be run directly without
+installation.  To run the countdown example:
+``python3 -m spasm examples/countdown.s``
 
 Alternatively, you may install the ``spasm`` executable:
 
 .. code:: sh
 
-    $ pip3.11 install --editable .
+    $ pip3 install --editable .
     $ spasm examples/countdown.s
 
 **NOTE:**
@@ -23,7 +33,7 @@ true Sphinx architecture, the jump instruction is specified to take one
 clock cycle.
 
 Instructions
-------------
+============
 
 Arguments to most instructions in Sphinx can be any of the following
 forms::
@@ -42,6 +52,9 @@ forms::
   values in the (read-only) const section instead, which usually holds
   the inputs to the program.  For example: ``{input_number}``
 
+Sphinx follows the convention of placing the destination first, ie
+``mov [dest], [source]``
+
 Instructions are allowed in the code section only.
 
 ===================================================== ======================= ==========================================================
@@ -50,7 +63,8 @@ Instructions                                          Syntax                  De
 halt                                                  halt                    Unconditional halt
 heq, hne, hlt, hgt, hle, hge, hltu, hgtu, hleu, hgeu  heq ARG, ARG            Conditional halt.  Compares the arguments and halts if the
                                                                               condition is met.  Unsigned comparisons have the suffix u.
-j                                                     j ARG                   Jump to the specified address if not jumping would lead to
+j                                                     j ARG                   `Turing jump <https://en.wikipedia.org/wiki/Turing_jump>`_.
+                                                                              Jumps to the specified address if not jumping would lead to
                                                                               halting.
 add, sub, mul, div, mod, and, or, xor, asl, asr       add [IMMED], ARG, ARG   Arithmetic instructions, outputting to the given address
                                                                               in state.
@@ -76,7 +90,7 @@ flag                                                  flag IDENTIFIER         In
 
 
 Data directives
----------------
+===============
 Allowed in the state and const sections
 
 - ``.ascii "STRING"``
@@ -89,7 +103,7 @@ Allowed in the state and const sections
 - ``.arg IDENT (ascii | asciiz | asciip | word | byte)`` - See section on command-line arguments
 
 Preprocessor commands
----------------------
+=====================
 
 - ``%section code | state | const`` - change the section
 - ``%format word NUMBER | inf`` - set the word size in bytes, or ``inf``
@@ -99,8 +113,18 @@ Preprocessor commands
   word to stdout.  Default: signed
 - ``%argv`` -- See section on command-line arguments
 
+SIGBOVIK
+========
+A paper introducing the Sphinx instruction set was accepted into the
+proceedings of `The Association for Computational Heresy <https://sigbovik.org/>`_.
+
+Burrill, Ben 2023.
+"A Halt-Averse Instruction Set Architecture for Embedded Hypercomputers".
+In *A Record of the Proceedings of SIGBOVIK 2023*.
+The Association for Computational Heresy, p. 150.
+
 Command-line arguments
-----------------------
+======================
 Sphinx assembly has support for specifying the inputs that an assembly
 program requires.  These may be passed on the command-line to ``spasm``.
 
