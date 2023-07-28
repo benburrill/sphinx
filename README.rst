@@ -1,13 +1,14 @@
 ==========
 Sphinx ISA
 ==========
-Sphinx is an instruction set architecture intended for low-power
-embedded hypercomputers, which relies only on a Turing jump instruction
-(along with an assortment of conditional halt instructions) for control
-flow.
+Sphinx is an instruction set architecture intended for low-power embedded
+`hypercomputers <https://en.wikipedia.org/wiki/Hypercomputation>`_.
+For control flow, it relies only on its
+`Turing jump <https://en.wikipedia.org/wiki/Turing_jump>`_ instruction,
+along with an assortment of conditional halt instructions.
 
-This repository houses a working Sphinx emulator written in Python and
-aims also to provide an official specification for the architecture.
+This repository houses a working Sphinx emulator written in Python, and
+aims also to provide a specification of the architecture.
 
 Emulator
 ========
@@ -116,37 +117,6 @@ Preprocessor commands
   word to stdout.  Default: signed
 - ``%argv`` -- See section on command-line arguments
 
-How does it work?
-=================
-Time travel.  Oh you mean the emulator?  There's no magic to it.
-Relevant code can be in `spasm/program.py <https://github.com/benburrill/sphinx/blob/24e80ef39aaae1f9aff020a275baea03b64285cc/spasm/program.py#L291-L367>`_.
-It works kinda like a depth-first search in the tree of possible paths
-of execution.  Since we have finitely bounded state, the *only* way not
-to halt is for there to be a repeating loop.  So at a jump point, we're
-recursively searching to see if there's a repeated state by not jumping.
-Failing that, ie when halting would be inevitable, we jump.  Regardless,
-we will know if we should jump in finite (albeit possibly huge) time.
-
-More theoretically, Sphinx's halting problem isn't undecidable because
-it isn't Turing complete - it *requires* finitely bounded state in order
-to work, and cannot be generalized to an unbounded version (though I
-haven't let that stop me from adding ``%format word inf``).  Although
-Sphinx's execution depends intimately on its own halting problem (which
-is seemingly problematic regardless of the fact it has finite state),
-Sphinx's freedom to act on this information for itself is limited.
-Sphinx can't test if something will halt without committing to run it if
-it won't.
-
-SIGBOVIK
-========
-A paper introducing the Sphinx instruction set was accepted into the
-proceedings of `The Association for Computational Heresy <https://sigbovik.org/>`_.
-
-Burrill, Ben 2023.
-"A Halt-Averse Instruction Set Architecture for Embedded Hypercomputers".
-In *A Record of the Proceedings of SIGBOVIK 2023*.
-The Association for Computational Heresy, p. 150.
-
 Command-line arguments
 ======================
 Sphinx assembly has support for specifying the inputs that an assembly
@@ -201,3 +171,35 @@ variable ``$argc`` which gives the total number of arguments passed.
 From this, you can infer the number of arguments associated with each
 argument variable.  Alternatively, you may place a label at the end of
 an argument directive and iterate through until the label is reached.
+
+How does it work?
+=================
+Time travel.  Oh you mean the emulator?  There's no magic to it.
+It works kinda like a depth-first search in the tree of possible paths
+of execution.  Since we have finitely bounded state, the *only* way not
+to halt is for there to be a repeating loop.  So at a jump point, we're
+recursively searching to see if there's a repeated state by not jumping.
+Failing that, ie when halting would be inevitable, we jump.  Regardless,
+we will know if we should jump in finite (albeit possibly huge) time.
+Relevant code can be in `spasm/program.py <https://github.com/benburrill/sphinx/blob/24e80ef39aaae1f9aff020a275baea03b64285cc/spasm/program.py#L291-L367>`_.
+
+
+More theoretically, Sphinx's halting problem isn't undecidable because
+it isn't (strictly) Turing complete - it *requires* finitely bounded state in order
+to work, and cannot be generalized to an unbounded version (though I
+haven't let that stop me from adding ``%format word inf``).  Although
+Sphinx's execution depends intimately on its own halting problem (which
+is seemingly problematic regardless of the fact it has finite state),
+Sphinx's freedom to act on this information for itself is limited.
+Sphinx can't test if something will halt without committing to run it if
+it won't.
+
+SIGBOVIK
+========
+A paper introducing the Sphinx instruction set was accepted into the
+proceedings of `The Association for Computational Heresy <https://sigbovik.org/>`_.
+
+Burrill, Ben 2023.
+"A Halt-Averse Instruction Set Architecture for Embedded Hypercomputers".
+In *A Record of the Proceedings of SIGBOVIK 2023*.
+The Association for Computational Heresy, p. 150.
