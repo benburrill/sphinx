@@ -295,6 +295,7 @@ class Program:
         # Otherwise return None.
 
         prog = self.fork()
+        vctx = ctx.virtualize()
 
         # path stores Jump decisions along the current path of execution
         # See the Jump enum
@@ -311,7 +312,7 @@ class Program:
 
         while True:
             while True:
-                options = prog.run_until_branch(ctx)
+                options = prog.run_until_branch(vctx)
                 if not options:
                     # Abandon timeline!
                     decision = None

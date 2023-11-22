@@ -5,18 +5,11 @@ from .errors import *
 
 
 class Emulator:
-    def __init__(self, prog, vctx=None, rctx=None, cycle=None):
+    def __init__(self, prog, ctx=None, cycle=None):
         self.prog = prog
         self.cycle = cycle
 
-        self.vctx = vctx if vctx is not None else VirtualContext()
-        self.rctx = rctx if rctx is not None else IntOutputContext(signed=True)
-        self.rctx.on_done = self.show_stats
-
-    def show_stats(self):
-        print(f'    CPU time: {self.rctx.total_time} clock cycles')
-        emulation_time = self.vctx.total_time + self.rctx.total_time
-        print(f'    Emulator efficiency: {self.rctx.total_time / emulation_time:.2%}')
+        self.ctx = ctx if ctx is not None else IntOutputContext(signed=True)
 
     @classmethod
     def run_from_file(cls, fname, reraise=False, args=None):
@@ -25,18 +18,18 @@ class Emulator:
         try:
             ps.parse_file(fname)
             prog = ps.get_program()
-            rctx = ps.get_output_context()
+            ctx = ps.get_output_context()
         except AssemblerError as err:
             ps.handle_error(err)
             if reraise:
                 raise
             return 1
 
-        cls(prog, rctx=rctx).run()
+        cls(prog, ctx=ctx).run()
         return 0
 
     def step(self):
-        match self.prog.exec(self.rctx):
+        match self.prog.exec(self.ctx):
             case (new_pc,):
                 self.prog.pc = new_pc
             case (pc_cont, pc_jump):
@@ -47,7 +40,7 @@ class Emulator:
                         self.prog.pc = pc_cont
                     self.cycle = self.cycle.tail
                 else:
-                    self.cycle = self.prog.jump(pc_cont).find_cycle(self.vctx)
+                    self.cycle = self.prog.jump(pc_cont).find_cycle(self.ctx)
                     if self.cycle is None:
                         self.prog.pc = pc_jump
                     else:

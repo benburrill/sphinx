@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-import contextlib
 import time
 import sys
 
@@ -23,6 +22,10 @@ class ExecutionContext(ABC):
     def on_flag(self, prog, flag):
         pass
 
+    @abstractmethod
+    def virtualize(self):
+        pass
+
     # @abstractmethod
     # def run_syscall(self, syscall):
     #     pass
@@ -38,29 +41,43 @@ class VirtualContext(ExecutionContext):
     def on_flag(self, prog, flag):
         pass
 
+    def virtualize(self):
+        return self
+
 
 class RealContext(ExecutionContext):
-    def __init__(self):
+    def __init__(self, *, vctx=None):
         super().__init__()
-        self.on_done = lambda: None
+        self.vctx = vctx if vctx is not None else VirtualContext()
+        self.last_progress = None
+
+    def virtualize(self):
+        return self.vctx
 
     def sleep(self, millis):
         time.sleep(millis / 1000)
 
     def on_flag(self, prog, flag):
-        with contextlib.redirect_stdout(sys.stderr):
-            print(f'Reached {flag} flag')
-            match flag:
-                case 'done' | 'error' | 'win' | 'lose':
-                    self.on_done()
-                case 'debug':
-                    print(f'    PC: {prog.pc}')
-                    print(f'    State: {prog.state.hex(" ", -prog.mf.word_size)}')
+        print(f'Reached {flag} flag', file=sys.stderr)
+        match flag:
+            case 'done' | 'error' | 'win' | 'lose':
+                print(f'    CPU time: {self.total_time} clock cycles', file=sys.stderr)
+                emulation_time = self.vctx.total_time + self.total_time
+                print(f'    Emulator efficiency: {self.total_time / emulation_time:.2%}', file=sys.stderr)
+            case 'progress':
+                message = f'    CPU time: {self.total_time} clock cycles'
+                if self.last_progress is not None:
+                    message += f' ({self.total_time - self.last_progress} since last progress)'
+                self.last_progress = self.total_time
+                print(message, file=sys.stderr)
+            case 'debug':
+                print(f'    PC: {prog.pc}', file=sys.stderr)
+                print(f'    State: {prog.state.hex(" ", -prog.mf.word_size)}', file=sys.stderr)
 
 
 class IntOutputContext(RealContext):
-    def __init__(self, *, signed):
-        super().__init__()
+    def __init__(self, *, signed, vctx=None):
+        super().__init__(vctx=vctx)
         self.signed = signed
 
     def output(self, word):
@@ -68,8 +85,8 @@ class IntOutputContext(RealContext):
 
 
 class ByteOutputContext(RealContext):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *, vctx=None):
+        super().__init__(vctx=vctx)
         self.last_byte = b'\n'
 
     def on_flag(self, prog, flag):
