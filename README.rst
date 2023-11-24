@@ -183,7 +183,7 @@ to halt is for there to be a repeating loop.  So at a jump point, we're
 recursively searching to see if there's a repeated state by not jumping.
 Failing that, ie when halting would be inevitable, we jump.  Regardless,
 we will know if we should jump in finite (albeit possibly huge) time.
-Relevant code can be in `spasm/program.py <https://github.com/benburrill/sphinx/blob/00bab1c3e04ecc739bfc3280e9f4bcca3fdbd108/spasm/program.py#L291-L368>`_.
+Relevant code can be found in `spasm/program.py <https://github.com/benburrill/sphinx/blob/00bab1c3e04ecc739bfc3280e9f4bcca3fdbd108/spasm/program.py#L291-L368>`_.
 
 More theoretically, Sphinx's halting problem isn't undecidable because
 it isn't (strictly) Turing complete - it *requires* finitely bounded state in order
