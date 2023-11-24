@@ -174,15 +174,16 @@ an argument directive and iterate through until the label is reached.
 
 How does it work?
 =================
-Time travel.  Oh you mean the emulator?  There's no magic to it.
+Time travel, obviously.
+
+Or do you mean the emulator?  There's no magic to it.
 It works kinda like a depth-first search in the tree of possible paths
 of execution.  Since we have finitely bounded state, the *only* way not
 to halt is for there to be a repeating loop.  So at a jump point, we're
 recursively searching to see if there's a repeated state by not jumping.
 Failing that, ie when halting would be inevitable, we jump.  Regardless,
 we will know if we should jump in finite (albeit possibly huge) time.
-Relevant code can be in `spasm/program.py <https://github.com/benburrill/sphinx/blob/24e80ef39aaae1f9aff020a275baea03b64285cc/spasm/program.py#L291-L367>`_.
-
+Relevant code can be in `spasm/program.py <https://github.com/benburrill/sphinx/blob/00bab1c3e04ecc739bfc3280e9f4bcca3fdbd108/spasm/program.py#L291-L368>`_.
 
 More theoretically, Sphinx's halting problem isn't undecidable because
 it isn't (strictly) Turing complete - it *requires* finitely bounded state in order
@@ -193,6 +194,15 @@ is seemingly problematic regardless of the fact it has finite state),
 Sphinx's freedom to act on this information for itself is limited.
 Sphinx can't test if something will halt without committing to run it if
 it won't.
+
+At its core, Sphinx is a model of nondeterministic computation, and has
+all the same performance characteristics as a nondeterministic Turing
+machine, being able to solve any NP problem in polynomial time (as
+measured in Sphinx clock cycles of course).  It does differ from some
+models of nondeterministic computation in that there is always one and
+only one unambiguous path of execution.  It is still "nondeterministic"
+though in the sense that this path can depend on what *would* have
+happened if a different path had been taken instead.
 
 SIGBOVIK
 ========
