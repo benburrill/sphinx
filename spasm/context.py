@@ -88,6 +88,8 @@ class ByteOutputContext(RealContext):
     def __init__(self, *, vctx=None):
         super().__init__(vctx=vctx)
         self.last_byte = b'\n'
+        # TODO: add --buffered to CLI?
+        self.unbuffered = True
 
     def on_flag(self, prog, flag):
         if self.last_byte != b'\n':
@@ -103,7 +105,7 @@ class ByteOutputContext(RealContext):
         self.last_byte = low_byte
 
         # sys.stdout.buffer isn't line buffered, even if sys.stdout is
-        if low_byte == b'\n' and sys.stdout.line_buffering:
+        if self.unbuffered or (low_byte == b'\n' and sys.stdout.line_buffering):
             sys.stdout.flush()
 
 

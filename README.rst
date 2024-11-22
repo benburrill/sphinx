@@ -29,12 +29,60 @@ Alternatively, you may install the ``spasm`` executable:
     $ pip3 install --editable .
     $ spasm examples/countdown.s
 
+Overview
+========
+For the most part, Sphinx is a fairly conventional assembly language.
+The only truly unusual instruction is its jump instruction ``j`` (the
+"Turing jump").  The jump instruction performs a jump if not jumping
+would lead to halting.  For example, the following code is an infinite
+loop:
+
+.. code::
+
+    loop:
+    j loop
+    halt
+
+Not jumping would clearly lead to a halt, so the jump will always be
+taken.
+
+Most Sphinx programs are designed to end in an infinite loop ("terminal
+non-termination"), as this is essentially the only way for the ``j``
+instruction to actually be useful (for the same reason that "you will
+eventually die" isn't a particularly useful prophecy if you are mortal).
+So rather than halting, it is common instead to signal to the user that
+all useful computation has completed with the instruction ``flag done``.
+
+Conditional execution can be accomplished by making use of the
+conditional halt instructions, eg ``heq [a], [b]`` will halt if the
+words stored at the labels ``a`` and ``b`` are equal.
+(TODO: I should make an example specifically showing how to do halt
+propagation and link to it here.)
+
+Like all instructions in the Sphinx ISA, the jump instruction is
+specified to take one clock cycle to run.  This means you can use the
+jump instruction's ability to predict what will/would have happened in
+the future to write "time-traveling" algorithms that are asymptotically
+faster than conventional algorithms.
+
 **NOTE:**
-Due to the unfortunate limitations of traditional processors, the
-emulator may require an exponential amount of memory and time to perform
-jump instructions in some cases, based on the amount of state.  On a
-true Sphinx architecture, the jump instruction is specified to take one
-clock cycle.
+Due to the unfortunate limitations of traditional processors, your
+programs may suffer from degraded performance and may require large
+amounts of memory from the host system under emulation with ``spasm``.
+
+See the `<examples>`_ for some Sphinx programs.
+(TODO: highlight some specific examples of interest)
+
+If you're not in the mood for writing assembly code, you may prefer
+instead to write your time-traveling algorithms in my high-level C-like
+programming language "Halt is Defeat", which compiles to Sphinx
+assembly.
+See https://github.com/benburrill/halt_is_defeat for more info.
+
+Sphinx does have a few other quirks compared to most ISAs, beyond just
+the Turing jump instruction.  Most notably, there is no separation
+between registers and main memory.  Instead, all program state (except
+for the program counter) is stored in a unified state array.
 
 Instructions
 ============
@@ -64,7 +112,7 @@ Instructions are allowed in the code section only.
 ===================================================== ======================= ==========================================================
 Instructions                                          Syntax                  Description
 ===================================================== ======================= ==========================================================
-halt                                                  halt                    Unconditional halt
+halt                                                  halt                    Unconditional halt.  Ends program execution.
 heq, hne, hlt, hgt, hle, hge, hltu, hgtu, hleu, hgeu  heq ARG, ARG            Conditional halt.  Compares the arguments and halts if the
                                                                               condition is met.  Unsigned comparisons have the suffix u.
 j                                                     j ARG                   `Turing jump <https://en.wikipedia.org/wiki/Turing_jump>`_.
@@ -77,9 +125,8 @@ lws, lwc, lbs, lbc                                    lws [IMMED], ARG        Se
                                                                               from the word or byte at the address specified by the
                                                                               other argument.
 lwso, lwco, lbso, lbco                                lwso [IMMED], ARG, ARG  Like the previous, but with an additional offset argument
-sws, sbs                                              sws ARG, ARG            Store the value (word or byte) specified by the second
-                                                                              argument into the word of state at address specified by
-                                                                              the first.
+sws, sbs                                              sws ARG, ARG            Store the value specified by the second argument into the
+                                                                              word or byte of state at address specified by the first.
 swso, sbso                                            swso ARG, ARG, ARG      Again, adds an offset.  Note that the offset is given by
                                                                               the second argument, not the third one (since it is
                                                                               offsetting the first argument).
