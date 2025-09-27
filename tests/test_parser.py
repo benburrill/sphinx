@@ -1,4 +1,6 @@
 import textwrap
+import math
+import sys
 
 import pytest
 
@@ -40,6 +42,11 @@ def test_format_conflict():
             %format output byte
             %format output unsigned
         """))
+
+@pytest.mark.skipif(not math.isfinite(sys.maxsize), reason='Turing complete')
+def test_missing_integers_for_inf_word_size():
+    with raises(OSError, match='Your system lacks some of the integers'):
+        make_program(get_lines("%format word inf"))
 
 def test_cyclic_labels():
     assert make_program(get_lines("""
@@ -124,17 +131,31 @@ def test_math(expr, expected):
         .word {expr}
     """)).signed(('sv', 0)) == expected
 
-def test_mismatched_parens():
-    with raises(AssemblerSyntaxError):
+@pytest.mark.parametrize("expr, error", [
+    ("(()", AssemblerSyntaxError),
+    ("())", AssemblerSyntaxError),
+    ("2++", AssemblerSyntaxError),
+    ("2+/", AssemblerSyntaxError),
+    ("2 2", AssemblerSyntaxError),
+    ("1/0", EvaluationError)
+])
+def test_bad_math(expr, error):
+    with raises(error):
         make_program(get_lines(f"""
             %format word 2
             %section state
-            .word (()
+            .word {expr}
         """))
 
-    with raises(AssemblerSyntaxError):
-        make_program(get_lines(f"""
-            %format word 2
-            %section state
-            .word ())
-        """))
+def test_word_suffix():
+    assert make_program(get_lines("""
+        %format word 3
+        %section state
+        .word 10w
+    """)).signed(('sv', 0)) == 30
+
+    assert make_program(get_lines("""
+        %section state
+        .word 10w
+        %format word 3
+    """)).signed(('sv', 0)) == 30
