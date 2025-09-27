@@ -1,4 +1,7 @@
 import textwrap
+
+import pytest
+
 from spasm.errors import *
 from spasm.parser import Parser as SphinxParser
 
@@ -99,4 +102,39 @@ def test_label_sections():
             .word label
             .zero 10
             label:
+        """))
+
+@pytest.mark.parametrize("expr, expected", [
+    ("2+2", 2+2),
+    ("2+3*4", 2+3*4),
+    ("2*3+4", 2*3+4),
+    ("(2+3)*4", (2+3)*4),
+    ("--1", --1),
+    ("~-+-~+0", ~-+-~+0),
+    ("2--1", 2--1),
+    # Sphinx does not follow C convention for bitwise op order
+    ("1<<4-1", (1<<4)-1),
+    ("1+2&2", 1+(2&2)),
+    ("('B' + 3) * 2", (ord('B') + 3) * 2)
+])
+def test_math(expr, expected):
+    assert make_program(get_lines(f"""
+        %format word 2
+        %section state
+        .word {expr}
+    """)).signed(('sv', 0)) == expected
+
+def test_mismatched_parens():
+    with raises(AssemblerSyntaxError):
+        make_program(get_lines(f"""
+            %format word 2
+            %section state
+            .word (()
+        """))
+
+    with raises(AssemblerSyntaxError):
+        make_program(get_lines(f"""
+            %format word 2
+            %section state
+            .word ())
         """))
