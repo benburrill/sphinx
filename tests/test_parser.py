@@ -159,3 +159,37 @@ def test_word_suffix():
         .word 10w
         %format word 3
     """)).signed(('sv', 0)) == 30
+
+    assert make_program(get_lines("""
+        %section state
+        .word 10w
+    """)).signed(('sv', 0)) == 20
+
+
+@pytest.mark.parametrize("comment", ["", " ; comment"])
+@pytest.mark.parametrize("directive, expected", [
+    (".byte 0x42, 0x65, 0x6e",  b"Ben"),
+    (".byte 0x42, 0x65, 0x6e,", b"Ben"),
+    (".byte 0x42,", b"B"),
+    (".word 1, 2, 3", b"\x01\x00\x02\x00\x03\x00")
+])
+def test_directive_multi_expr(directive, expected, comment):
+    assert bytes(make_program(get_lines(f"""
+        %format word 2
+        %section state
+        {directive}{comment}
+    """)).state) == expected
+
+@pytest.mark.parametrize("directive", [
+    ".byte",
+    ".byte ; comment",
+    ".byte 0x42, 0x65, 0x6e,,",
+    ".byte 0x42, , 0x65, 0x6e"
+])
+def test_bad_multi_expr(directive):
+    with raises(AssemblerSyntaxError):
+        bytes(make_program(get_lines(f"""
+            %format word 2
+            %section state
+            {directive}
+        """)).state)

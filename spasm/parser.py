@@ -265,6 +265,7 @@ def read_multi_expr(scan, namespace, mf):
 
         if not scan.read_string(b','):
             break
+        scan.read(ignore)
 
 
 def read_instr_var(scan, namespace, mf):
