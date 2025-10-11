@@ -3,32 +3,63 @@ import math
 import sys
 
 import pytest
+from pytest import raises
 
 from spasm.errors import *
 from spasm.parser import Parser as SphinxParser
+from spasm.context import output_map
 
-from pytest import raises
 
 def get_lines(src, raw=False):
     if not raw:
         src = textwrap.dedent(src).strip('\n')
     return src.encode('utf-8').split(b'\n')
 
-def make_program(lines, args=()):
+def parse(lines, *, args=()):
     ps = SphinxParser(args)
     ps.parse_lines(lines)
-    return ps.get_program()
+    return ps
 
-def test_formats():
-    assert make_program(get_lines("")).mf.word_size == 2
-    assert make_program(get_lines("%format word 3")).mf.word_size == 3
-    assert make_program(get_lines("""
-        %format word 3
-        %format output byte
-    """)).mf.word_size == 3
+def make_program(lines, **kwargs):
+    return parse(lines, **kwargs).get_program()
 
-    with raises(AssemblerSyntaxError, match='output'):
-        make_program(get_lines("%format output potato"))
+@pytest.mark.parametrize("src, word_size, output_format", [
+    ("", 2, 'signed'),
+    ("%format word 3", 3, 'signed'),
+    ("%format word 0x100", 0x100, 'signed'),
+    # character literals are very silly to use here, but are allowed
+    ("%format word '\x01'", 1, 'signed'),
+    ("%format output byte", 2, 'byte'),
+    ("%format output signed", 2, 'signed'),
+    ("%format output unsigned", 2, 'unsigned'),
+    ("%format word 3\n%format output byte", 3, 'byte')
+])
+def test_formats(src, word_size, output_format):
+    ps = parse(get_lines(src))
+    prog = ps.get_program()
+    ctx = ps.get_output_context()
+    assert prog.mf.word_size == word_size
+    # Contexts don't have __eq__, so just check type for now
+    assert type(ctx) is type(output_map[output_format]())
+
+@pytest.mark.parametrize("src, err_match", [
+    ("%format output potato", 'Invalid output format'),
+    ("%format output BYTE", 'Invalid output format'),
+    ("%format output", None), ("%format output ", None),
+    ("%format word -1", 'must be positive integer or inf'),
+    ("%format word 0", 'must be positive integer or inf'),
+    ("%format word 1+1", None),  # no math allowed (different error msg)
+    ("%section state\n.zero 1\npotato:\n%format word potato",
+     'must be positive integer or inf'),
+    ("%format word", None), ("%format word ", None),
+    ("%format potato", 'Invalid format specifier'),
+    ("%format word1", 'Invalid format specifier'),
+    ("%format wordle 6", 'Invalid format specifier'),
+    ("%format", None), ("%format ", None)
+])
+def test_format_errors(src, err_match):
+    with raises(AssemblerSyntaxError, match=err_match):
+        make_program(get_lines(src))
 
 def test_format_conflict():
     with raises(AssemblerError, match='conflict'):
