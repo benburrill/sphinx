@@ -28,7 +28,7 @@ def make_program(lines, **kwargs):
     ("%format word 3", 3, 'signed'),
     ("%format word 0x100", 0x100, 'signed'),
     # character literals are very silly to use here, but are allowed
-    ("%format word '\x01'", 1, 'signed'),
+    (r"%format word '\x01'", 1, 'signed'),
     ("%format output byte", 2, 'byte'),
     ("%format output signed", 2, 'signed'),
     ("%format output unsigned", 2, 'unsigned'),
