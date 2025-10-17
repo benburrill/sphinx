@@ -23,6 +23,7 @@ def parse(lines, *, args=()):
 def make_program(lines, **kwargs):
     return parse(lines, **kwargs).get_program()
 
+
 @pytest.mark.parametrize("src, word_size, output_format", [
     ("", 2, 'signed'),
     ("%format word 3", 3, 'signed'),
@@ -42,9 +43,11 @@ def test_formats(src, word_size, output_format):
     # Contexts don't have __eq__, so just check type for now
     assert type(ctx) is type(output_map[output_format]())
 
+
 @pytest.mark.parametrize("src, err_match", [
     ("%format output potato", 'Invalid output format'),
     ("%format output BYTE", 'Invalid output format'),
+    ("%format output bytes", 'Invalid output format'),
     ("%format output", None), ("%format output ", None),
     ("%format word -1", 'must be positive integer or inf'),
     ("%format word 0", 'must be positive integer or inf'),
@@ -61,6 +64,7 @@ def test_format_errors(src, err_match):
     with raises(AssemblerSyntaxError, match=err_match):
         make_program(get_lines(src))
 
+
 def test_format_conflict():
     with raises(AssemblerError, match='conflict'):
         make_program(get_lines("""
@@ -74,10 +78,12 @@ def test_format_conflict():
             %format output unsigned
         """))
 
+
 @pytest.mark.skipif(not math.isfinite(sys.maxsize), reason='Turing complete')
 def test_missing_integers_for_inf_word_size():
     with raises(OSError, match='Your system lacks some of the integers'):
         make_program(get_lines("%format word inf"))
+
 
 def test_cyclic_labels():
     assert make_program(get_lines("""
@@ -112,6 +118,7 @@ def test_cyclic_labels():
             after:
         """))
 
+
 def test_label_sections():
     prog = make_program(get_lines("""
         %format word 2
@@ -142,6 +149,7 @@ def test_label_sections():
             label:
         """))
 
+
 @pytest.mark.parametrize("expr, expected", [
     ("2+2", 2+2),
     ("2+3*4", 2+3*4),
@@ -162,6 +170,7 @@ def test_math(expr, expected):
         .word {expr}
     """)).signed(('sv', 0)) == expected
 
+
 @pytest.mark.parametrize("expr, error", [
     ("(()", AssemblerSyntaxError),
     ("())", AssemblerSyntaxError),
@@ -177,6 +186,7 @@ def test_bad_math(expr, error):
             %section state
             .word {expr}
         """))
+
 
 def test_word_suffix():
     assert make_program(get_lines("""
@@ -211,14 +221,51 @@ def test_directive_multi_expr(directive, expected, comment):
         {directive}{comment}
     """)).state) == expected
 
+
 @pytest.mark.parametrize("directive", [
     ".byte",
     ".byte ; comment",
     ".byte 0x42, 0x65, 0x6e,,",
-    ".byte 0x42, , 0x65, 0x6e"
+    ".byte 0x42, , 0x65, 0x6e",
+    ".byte ,0x42",
+    ".byte ,"
 ])
 def test_bad_multi_expr(directive):
     with raises(AssemblerSyntaxError):
+        bytes(make_program(get_lines(f"""
+            %format word 2
+            %section state
+            {directive}
+        """)).state)
+
+
+@pytest.mark.parametrize("count", [0, 1, 100])
+@pytest.mark.parametrize("directive_fmt, fill_byte", [
+    (".zero {count}", b'\0'),
+    (".fill 0, {count}", b'\0'),
+    (".fill 'B', {count}", b'B'),
+])
+def test_fill(count, directive_fmt, fill_byte):
+    assert bytes(make_program(get_lines(f"""
+        %format word 2
+        %section state
+        {directive_fmt.format(count=count)}
+    """)).state) == fill_byte * count
+
+@pytest.mark.parametrize("directive, error, err_match", [
+    (".zero -1", ExpressionError, 'must not be negative'),
+    (".fill 0, -1", ExpressionError, 'must not be negative'),
+    (".fill 0, 0, 0", AssemblerSyntaxError, 'Too many arguments'),
+    (".fill 0, 0,", AssemblerSyntaxError, 'Too many arguments'),
+    (".fill 0,", AssemblerSyntaxError, 'found end of argument list'),
+    (".fill 0", AssemblerSyntaxError, 'found end of argument list'),
+    (".fill -1, 0", ValueError, 'must be in range'),
+    (".fill -1, 1", ValueError, 'must be in range'),
+    (".fill 256, 0", ValueError, 'must be in range'),
+    (".fill 256, 1", ValueError, 'must be in range')
+])
+def test_bad_fill(directive, error, err_match):
+    with raises(error, match=err_match):
         bytes(make_program(get_lines(f"""
             %format word 2
             %section state
