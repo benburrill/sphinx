@@ -149,33 +149,46 @@ def test_label_sections():
         """)
 
 
+@pytest.mark.parametrize("comment", ["", " ; comment"])
 @pytest.mark.parametrize("expr, expected", [
     ("2+2", 2+2),
     ("2+3*4", 2+3*4),
     ("2*3+4", 2*3+4),
     ("(2+3)*4", (2+3)*4),
+    ("-(2+3)", -(2+3)),
+    ("(((((1)))))", 1),
     ("--1", --1),
-    ("~-+-~+0", ~-+-~+0),
+    ("~-+-~+5", ~-+-~+5),
     ("2--1", 2--1),
+    ("2/3", 2//3),
+    ("-2/3", -2//3),
+    ("16/4/2", 16//4//2),
+    ("4/2*3/2", 4//2*3//2),
     # Sphinx does not follow C convention for bitwise op order
     ("1<<4-1", (1<<4)-1),
     ("1+2&2", 1+(2&2)),
+    ("1<<2|1<<3", 1<<2|1<<3),
+    ("0b10 & 0b110 | 0b101 & 0b01", 0b10 & 0b110 | 0b101 & 0b01),
     ("('B' + 3) * 2", (ord('B') + 3) * 2)
 ])
-def test_math(expr, expected):
+def test_math(expr, expected, comment):
     assert make_program(f"""
         %format word 2
         %section state
-        .word {expr}
+        .word {expr}{comment}
     """).signed(('sv', 0)) == expected
 
 
 @pytest.mark.parametrize("expr, error", [
     ("(()", AssemblerSyntaxError),
     ("())", AssemblerSyntaxError),
+    ("(-)", AssemblerSyntaxError),
     ("2++", AssemblerSyntaxError),
     ("2+/", AssemblerSyntaxError),
     ("2 2", AssemblerSyntaxError),
+    ("*3", AssemblerSyntaxError),
+    (";1", AssemblerSyntaxError),
+    ("", AssemblerSyntaxError),
     ("1/0", EvaluationError)
 ])
 def test_bad_math(expr, error):
