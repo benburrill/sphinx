@@ -304,3 +304,19 @@ def test_ascii_directives(directive, convert, string, expected):
         {directive} "{string}"
         %format word 3
     """).state) == convert(expected)
+
+
+@pytest.mark.parametrize("directive, error, err_match", [
+    (r".ascii 'B'", AssemblerSyntaxError, 'Expected string literal'),
+    (r'.ascii "hello', AssemblerSyntaxError, 'Unterminated string literal'),
+    (r'.ascii "hello", "world"', AssemblerSyntaxError, 'Too many arguments'),
+    (r'.ascii "hello" "world"', AssemblerSyntaxError, None),
+    (r'.ascii "\?"', AssemblerSyntaxError, 'Invalid escape sequence'),
+    (r'.ascii"hello"', AssemblerSyntaxError, 'Expected space')
+])
+def test_bad_ascii_directives(directive, error, err_match):
+    with raises(error, match=err_match):
+        bytes(make_program(f"""
+            %section state
+            {directive}
+        """).state)
