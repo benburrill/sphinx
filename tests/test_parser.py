@@ -65,13 +65,13 @@ def test_format_errors(src, err_match):
 
 
 def test_format_conflict():
-    with raises(AssemblerError, match='conflict'):
+    with raises(AssemblerError, match='word format .* conflict'):
         make_program("""
             %format word 2
             %format word 3
         """)
 
-    with raises(AssemblerError, match='conflict'):
+    with raises(AssemblerError, match='output format .* conflict'):
         make_program("""
             %format output byte
             %format output unsigned
@@ -98,7 +98,7 @@ def test_cyclic_labels():
         end:
     """).state[0] == 5 + 1 + 2 + 4 + 2
 
-    with raises(LabelError, match='concrete'):
+    with raises(LabelError, match='did not have a concrete address'):
         # Here the after label is defined, but has a cyclic dependency
         # which cannot be resolved.
         make_program("""
@@ -108,7 +108,7 @@ def test_cyclic_labels():
             after:
         """)
 
-    with raises(ExpressionError, match='defined'):
+    with raises(ExpressionError, match='not defined in this namespace'):
         # The potato label is not defined at all.
         make_program("""
             %format word 2
@@ -134,7 +134,7 @@ def test_label_sections():
     assert prog.state[0] == 2 + 5
     assert prog.const[0] == 2 + 10
 
-    with raises(NameConflictError, match='redefined'):
+    with raises(NameConflictError, match='cannot be redefined'):
         make_program("""
             %format word 2
             %section state
