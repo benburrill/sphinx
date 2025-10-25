@@ -283,3 +283,24 @@ def test_bad_fill(directive, error, err_match):
             %section state
             {directive}
         """).state)
+
+
+@pytest.mark.parametrize("directive, convert", [
+    (".ascii", lambda s: s),
+    (".asciiz", lambda s: s + b'\0'),
+    (".asciip", lambda s: len(s).to_bytes(3, 'little') + s)
+])
+@pytest.mark.parametrize("string, expected", [
+    (r"", b''),
+    (r"Hello, world!", b'Hello, world!'),
+    (r"💩", '💩'.encode('utf-8')),
+    (r'\"', b'"'),
+    (r';', b';'),
+    (r"[\0]", b'[\0]')
+])
+def test_ascii_directives(directive, convert, string, expected):
+    assert bytes(make_program(f"""
+        %section state
+        {directive} "{string}"
+        %format word 3
+    """).state) == convert(expected)
