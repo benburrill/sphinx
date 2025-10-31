@@ -109,10 +109,10 @@ def read_string_literal(scan):
 
 
 num_literal_tok = re.compile(tok_re({
-    'hex': r'0x[\da-fA-F][\da-fA-F_]*',
-    'oct': r'0o[0-7][0-7_]*',
-    'bin': r'0b[01][01_]*',
-    'dec': r'\d[\d_]*',
+    'hex': r'0x(?:[\da-fA-F]_?)*[\da-fA-F]',
+    'oct': r'0o(?:[0-7]_?)*[0-7]',
+    'bin': r'0b(?:[01]_?)*[01]',
+    'dec': r'(?:\d_?)*\d',
     'char': r"'[^'\\]'",
     'char_escape_start': r"'\\"
 }).encode())

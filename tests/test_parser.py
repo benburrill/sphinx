@@ -175,6 +175,37 @@ def test_repeated_data_sections():
     assert prog.state[1] == prog.const[1] == 0
 
 
+@pytest.mark.parametrize("expr, expected", [
+    ("10", 10), ("1_234", 1_234), ("1_1", 1_1), ("010", 10),
+    ("0x10", 0x10), ("0x12_ab_CD_ef", 0x12_ab_CD_ef),
+    ("0o10", 0o10), ("0o1_234_567", 0o1_234_567),
+    ("0b10", 0b10), ("0b1010_1111", 0b1010_1111),
+    (r"'A'", ord('A')), (r"'\n'", ord('\n')),
+    (r"'\''", ord("'")), ('\'"\'', ord('"')), ('\'\\"\'', ord('"')),
+    ("_1000\n_1000:", 4) # label
+])
+def test_numeric_literal(expr, expected):
+    assert make_program(f"""
+        %format word 4
+        %section state
+        .word {expr}
+    """).signed(('sv', 0)) == expected
+
+
+@pytest.mark.parametrize("expr", [
+    "0Xff", "0xg", "0O7", "0o8", "0B1", "0b2",
+    "1__1", "0x_10", "0x1__1", "0o_10", "0o1__1", "0b_10", "0b1__1",
+    "1_", "0x1_", "0o1_", "0b1_"
+])
+def test_bad_numeric_literal(expr):
+    with raises(AssemblerSyntaxError):
+        make_program(f"""
+            %format word 4
+            %section state
+            .word {expr}
+        """)
+
+
 @pytest.mark.parametrize("comment", ["", " ; comment"])
 @pytest.mark.parametrize("expr, expected", [
     ("2+2", 2+2),
@@ -322,8 +353,10 @@ def test_bad_fill(directive, error, err_match):
     (r"Hello, world!", b'Hello, world!'),
     (r"💩", '💩'.encode('utf-8')),
     (r'\"', b'"'),
+    (r"'\'", b"''"),
     (r";", b';'),
-    (r"[\0]", b'[\0]')
+    (r"[\0]", b'[\0]'),
+    (r"\a\b\f\n\r\t\0\\", b'\a\b\f\n\r\t\0\\')
 ])
 def test_ascii_directives(directive, convert, string, expected):
     assert bytes(make_program(f"""
