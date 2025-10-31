@@ -149,6 +149,32 @@ def test_label_sections():
         """)
 
 
+def test_repeated_data_sections():
+    prog = make_program("""
+        %format word 2
+        %section state
+        .word end_state - start_state
+        start_state:
+        .ascii "state: "
+        %section const
+        .word end_const - start_const
+        start_const:
+        .ascii "const: "
+        %section state
+        .ascii "mutable"
+        end_state:
+        %section const
+        .ascii "immutable"
+        end_const:
+    """)
+
+    assert bytes(prog.state[2:]) == b'state: mutable'
+    assert prog.state[0] == len(b'state: mutable')
+    assert bytes(prog.const[2:]) == b'const: immutable'
+    assert prog.const[0] == len(b'const: immutable')
+    assert prog.state[1] == prog.const[1] == 0
+
+
 @pytest.mark.parametrize("comment", ["", " ; comment"])
 @pytest.mark.parametrize("expr, expected", [
     ("2+2", 2+2),
@@ -267,6 +293,7 @@ def test_fill(count, directive_fmt, fill_byte):
 @pytest.mark.parametrize("directive, error, err_match", [
     (".zero -1", ExpressionError, 'must not be negative'),
     (".fill 0, -1", ExpressionError, 'must not be negative'),
+    (".zero 0, 0", AssemblerSyntaxError, 'Too many arguments'),
     (".fill 0, 0, 0", AssemblerSyntaxError, 'Too many arguments'),
     (".fill 0, 0,", AssemblerSyntaxError, 'Too many arguments'),
     (".fill 0,", AssemblerSyntaxError, 'found end of argument list'),
@@ -295,7 +322,7 @@ def test_bad_fill(directive, error, err_match):
     (r"Hello, world!", b'Hello, world!'),
     (r"💩", '💩'.encode('utf-8')),
     (r'\"', b'"'),
-    (r';', b';'),
+    (r";", b';'),
     (r"[\0]", b'[\0]')
 ])
 def test_ascii_directives(directive, convert, string, expected):
@@ -308,6 +335,7 @@ def test_ascii_directives(directive, convert, string, expected):
 
 @pytest.mark.parametrize("directive, error, err_match", [
     (r".ascii 'B'", AssemblerSyntaxError, 'Expected string literal'),
+    (r'.byte "B"', AssemblerSyntaxError, 'Expected expression'),
     (r'.ascii "hello', AssemblerSyntaxError, 'Unterminated string literal'),
     (r'.ascii "hello", "world"', AssemblerSyntaxError, 'Too many arguments'),
     (r'.ascii "hello" "world"', AssemblerSyntaxError, None),
