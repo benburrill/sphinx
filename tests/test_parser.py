@@ -175,6 +175,15 @@ def test_repeated_data_sections():
     assert prog.state[1] == prog.const[1] == 0
 
 
+@pytest.mark.parametrize("src", [
+    "%section potato",
+    "%section state .word 0"
+])
+def test_bad_sections(src):
+    with raises(AssemblerSyntaxError):
+        make_program(src)
+
+
 @pytest.mark.parametrize("expr, expected", [
     ("10", 10), ("1_234", 1_234), ("1_1", 1_1), ("010", 10),
     ("0x10", 0x10), ("0x12_ab_CD_ef", 0x12_ab_CD_ef),
