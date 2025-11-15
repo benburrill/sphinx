@@ -1,20 +1,38 @@
 ; Determines the max value in an array and then halts
 
-; Non-trivial halting programs are tricky in Sphinx.  Unlike max.s, we
-; will not be able to make use of Sphinx's predictive powers, but we can
-; still write a conventional algorithm to finds the max value.
-; Also, although it's fairly easy to write programs that either halt or
-; not halt for an arbitrarily complicated reason, if we want the program
-; to produce arbitrary output based on a computation and then halt, we
-; need to use non-static jumps (along the real path of execution, all
-; jumps must be taken in a halting program, but that doesn't mean that
-; the same jump always always needs to go to the same place).
+; See halt_propagation.s for info on the canonical way to do conditional
+; branching in Sphinx.  Here is an alternative approach that, although
+; technically more flexible, is awkward and unnecessary "in practice".
 
-; So the strategy in writing non-trivial halting Sphinx programs is to
-; turn your conditionals into a boolean 0 or 1 and then look up the
-; address to jump to based on that.
+; Although it's fairly easy to write programs that either halt or not
+; halt for an arbitrarily complicated reason, if we want the program to
+; produce arbitrary output based on a computation and then halt, we need
+; to use non-static jumps (along the real path of execution, all jumps
+; must be taken in a halting program, but that doesn't mean that the
+; same jump always always needs to go to the same place).
 
-; Currently I haven't added bitwise operators, but we don't need 'em
+; Unlike max.s, we will not be able to make use of Sphinx's predictive
+; powers -- it is useless to learn that the program will halt if you
+; have designed the program to always halt, just as the prophecy "you
+; will eventually die" is useless to mortals.  But we can still write a
+; conventional algorithm to find the max value.
+
+; This shows that we don't need to use halt propagation and emulate
+; halting with terminal non-termination when converting halting programs
+; to Sphinx.  We can instead turn our conditionals into a boolean 0 or 1
+; and then look up the address to jump based on that.
+
+; Since terminal non-termination is useful in that it allows you to make
+; use of Sphinx's prophetic features, there's no reason to use this form
+; of conditional branching "in practice".  You should instead just use
+; halt propagation.  But this alternative approach may still be of some
+; interest since it shows we can do branching without the requirement
+; that the program ends in an infinite loop.
+
+; --- anyway, enough rambling, let's get to the code:
+
+; When I originally wrote this, I hadn't added bitwise operators, but we
+; don't need 'em.
 ; NOTE: division by 0 causes div to leave the output unchanged.
 ; To test if x is non-zero (1 if non-zero, 0 if zero):
 ;   mov [test], [x]
@@ -77,6 +95,7 @@ loop:
     div [jump], [diff], [jump]
     lbco [jump], branch_sign, [jump]
     j [jump]
+    halt
     ; This halt is actually not necessary to ensure that the jump isn't
     ; skipped because the program is guaranteed to eventually halt due
     ; to the loop being bounded by the other jump (even if the program
@@ -84,7 +103,6 @@ loop:
     ; taken here, with or without forcing it with an unconditional halt
     ; immediately after.  Easier to reason about with it though.
     ; Also means the emulator needs to do less work.
-    halt
     bigger:
 
     mov [max_val], [cur_val]
