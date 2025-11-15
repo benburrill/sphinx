@@ -4,12 +4,11 @@
 ; branching in Sphinx.  Here is an alternative approach that, although
 ; technically more flexible, is awkward and unnecessary "in practice".
 
-; Although it's fairly easy to write programs that either halt or not
-; halt for an arbitrarily complicated reason, if we want the program to
-; produce arbitrary output based on a computation and then halt, we need
-; to use non-static jumps (along the real path of execution, all jumps
-; must be taken in a halting program, but that doesn't mean that the
-; same jump always always needs to go to the same place).
+; If we use halt propagation, although we can make the program either
+; halt or not halt for any arbitrarily complicated reason, a halting
+; program might halt early without the full output we wanted.
+; In a halting program, all jumps are unconditional in the real path of
+; execution, but we can still jump dynamically using a branch table.
 
 ; Unlike max.s, we will not be able to make use of Sphinx's predictive
 ; powers -- it is useless to learn that the program will halt if you
@@ -31,8 +30,8 @@
 
 ; --- anyway, enough rambling, let's get to the code:
 
-; When I originally wrote this, I hadn't added bitwise operators, but we
-; don't need 'em.
+; When I originally wrote this, I hadn't added bitwise operators, which
+; is why we're not using them.
 ; NOTE: division by 0 causes div to leave the output unchanged.
 ; To test if x is non-zero (1 if non-zero, 0 if zero):
 ;   mov [test], [x]
