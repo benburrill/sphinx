@@ -56,8 +56,8 @@ all useful computation has completed with the instruction ``flag done``.
 Conditional execution can be accomplished by making use of the
 conditional halt instructions, eg ``heq [a], [b]`` will halt if the
 words stored at the labels ``a`` and ``b`` are equal.
-(TODO: I should make an example specifically showing how to do halt
-propagation and link to it here.)
+See `<examples/halt_propagation.s>`_ for details on how to implement
+conditional branching with this.
 
 Like all instructions in the Sphinx ISA, the jump instruction is
 specified to take one clock cycle to run.  This means you can use the
