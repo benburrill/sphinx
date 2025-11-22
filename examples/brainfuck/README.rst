@@ -1,7 +1,7 @@
 Brainfuck to Sphinx
 ===================
 
-``to_sphinx.py`` translates brainfuck to Sphinx with a fixed input.
+``to_sphinx.py`` translates brainfuck to Sphinx.
 
 There are two modes:
 
