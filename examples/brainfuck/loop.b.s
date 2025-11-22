@@ -1,6 +1,8 @@
+%argv [<input>]
 %format output byte
 %section const
-input: .asciiz ""
+input: .arg input ascii
+.byte 0
 %section state
 value: .word 0
 ip: .word input

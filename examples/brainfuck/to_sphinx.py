@@ -1,13 +1,9 @@
-def gen_data(input_str, data_size):
-    escaped = input_str.translate(str.maketrans({
-        '\\': '\\\\',
-        '"': '\\"',
-        '\n': '\\n'
-    }))
-
+def gen_data(data_size):
+    yield '%argv [<input>]'
     yield '%format output byte'
     yield '%section const'
-    yield f'input: .asciiz "{escaped}"'
+    yield f'input: .arg input ascii'
+    yield f'.byte 0'
 
     yield '%section state'
     yield 'value: .word 0'
@@ -54,8 +50,8 @@ def gen_code(brainfuck):
             yield 'hne [value], 0'
 
 
-def runner(brainfuck, input_str, data_size):
-    yield from gen_data(input_str, data_size)
+def runner(brainfuck, data_size):
+    yield from gen_data(data_size)
 
     yield '%section code'
     yield from gen_code(brainfuck)
@@ -64,8 +60,8 @@ def runner(brainfuck, input_str, data_size):
     yield 'halt'
 
 
-def forecaster(brainfuck, input_str, data_size):
-    yield from gen_data(input_str, data_size)
+def forecaster(brainfuck, data_size):
+    yield from gen_data(data_size)
 
     yield '%section code'
     yield 'j will_halt'
@@ -86,5 +82,5 @@ if __name__ == '__main__':
     args = iter(sys.argv[1:])
     func = {'forecaster': forecaster, 'runner': runner}[next(args)]
     with open(next(args)) as file:
-        for line in func(file.read(), next(args, ''), int(next(args, '1000'))):
+        for line in func(file.read(), int(next(args, '1000'))):
             print(line)

@@ -9,10 +9,12 @@ The ``runner`` mode is a direct translation, where termination of the
 brainfuck program translates into a done flag followed by terminal
 non-termination in Sphinx.
 
-Based on examples/halting.s, we should be able to transform any halting
-brainfuck program into a halting Sphinx program without it halting too
-early, but it's easier just to use terminal non-termination to deal with
-this problem.
+Based on `examples/branch_table.s <../branch_table.s>`_, we *could*
+transform halting brainfuck programs into a halting sphinx program, but
+it's easier just to use terminal non-termination.  We technically don't
+even need to use halt propagation in ``runner`` mode as brainfuck itself
+has no time-travel capabilities, but it is used anyway for consistency
+(see discussion below).
 
 The ``forecaster`` mode produces a sphinx program which "immediately"
 outputs a flag to the user indicating whether the brainfuck program
@@ -25,16 +27,29 @@ loop at all, and just does so for consistency.
 
 Usage::
 
-    $ python to_sphinx.py MODE BF_FILE [INPUT [DATA_SIZE]] > SPHINX_FILE
+    $ python to_sphinx.py MODE BF_FILE [DATA_SIZE] > SPHINX_FILE
+    $ spasm SPHINX_FILE [INPUT]
 
 Where MODE is either ``runner`` or ``forecaster``, BF_FILE is the
-brainfuck source file, INPUT is the fixed input string read by ``,``
-(default: empty string) and DATA_SIZE is the number of bytes of data
+brainfuck source file and DATA_SIZE is the number of bytes of data
 (default 1000).
 
+The resulting sphinx code takes the input to be read by ``,`` as a
+command line argument INPUT (default: empty string).
+
+For example::
+
+    $ spasm cat.b.s "this will be read as input"
+    this will be read as input
+    Reached done flag
+        CPU time: 215 clock cycles
+        Emulator efficiency: 44.89%
 
 Translation
 -----------
+
+``to_sphinx.py`` uses the following translation from brainfuck to Sphinx
+instructions:
 
 ========= ======
 Brainfuck Sphinx
@@ -63,12 +78,16 @@ Brainfuck Sphinx
 ========= ======
 
 In the above table, dp is the data pointer and ip is the input pointer.
-In the case where there is always a path to an infinite loop, eg in
+
+In the case where there is always a path to an infinite loop, such as in
 ``runner`` mode, the ``[`` and ``]`` could be rewritten so that the
 label comes after the halt, which would slightly reduce the number of
-cycles.  By putting the labels before the condition, a halt is forced if
-sphinx jumps for the "wrong" reason due to a future halt (as in
-``forecaster`` mode).  This allows halts to be propagated upward.
+cycles.  Although this is unnecessary in ``runner`` mode, it makes the
+code compatible with time-travel, as used in ``forecaster`` mode.  By
+putting the labels before the condition, a halt is forced if sphinx
+jumps for the "wrong" reason, such as the future halt that is tested for
+in ``forecaster`` mode, effectively propagating that halt backwards
+through time (see `examples/halt_propagation.s <../halt_propagation.s>`_).
 
 Brainfuck is quite nice in that ``[`` and ``]`` have complementary
 conditions, so the halt propagation for ``[`` is done using the same
