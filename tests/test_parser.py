@@ -390,3 +390,18 @@ def test_bad_ascii_directives(directive, error, err_match):
             %section state
             {directive}
         """).state)
+
+@pytest.mark.parametrize("instr, expected", [
+    ("j c", ('j', ('im', 0))),
+    ("j [b]", ('j', ('sv', 0))),
+    ("j {a}", ('j', ('cv', 0))),
+])
+def test_instructions(instr, expected):
+    assert list(make_program(f"""
+        %section state
+        a: .word 0
+        %section const
+        b: .word 0
+        %section code
+        c: {instr}
+    """).code) == [expected]
